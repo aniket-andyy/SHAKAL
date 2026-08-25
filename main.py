@@ -1,3 +1,4 @@
+import os
 from dotenv import load_dotenv
 
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -231,9 +232,43 @@ There is no external study source available."""
         )
 
 
+# ==========================================
+# FIX 1: Knowledge base health check
+# ==========================================
+def kb_count():
+    """How many chunks are actually stored? Lets you verify image ingestion worked."""
+    try:
+        return vectorstore._collection.count()
+    except Exception:
+        try:
+            return len(vectorstore.get()["ids"])
+        except Exception:
+            return 0
+
+
+# ==========================================
+# FIX 2: Safe retrieval (MMR crash guard + empty chunk filter)
+# ==========================================
+def safe_retrieve(query):
+    docs = []
+    try:
+        docs = retriever.invoke(query)
+    except Exception:
+        # MMR can crash on tiny/empty collections -> fall back to similarity
+        try:
+            docs = vectorstore.similarity_search(query, k=4)
+        except Exception:
+            docs = []
+
+    # FIX 3: drop blank chunks (classic failed-image-extraction residue)
+    return [d for d in docs if (d.page_content or "").strip()]
+
+
 print("\n==========================================")
 print("             SHAKAL - STUDY MADAD")
 print("==========================================")
+
+print(f"\nKnowledge base: {kb_count()} chunks loaded")
 
 print("\nSelect working mode:")
 print("1. Source + LLM  [DEFAULT]")
@@ -295,19 +330,22 @@ while True:
             "question": query
         })
 
-        response = llm.invoke(
-            final_prompt
-        )
+        response = llm.invoke(final_prompt)
 
-        print(
-            f"\nAI: {response.content}\n"
-        )
+        print(f"\nAI: {response.content}\n")
 
         continue
 
-    docs = retriever.invoke(
-        query
-    )
+    # NEW: friendly message instead of crash when DB is empty
+    if kb_count() == 0:
+        print(
+            "\nAI: Your knowledge base is empty. "
+            "Process your sources first (make sure the image "
+            "contains readable text/diagrams).\n"
+        )
+        continue
+
+    docs = safe_retrieve(query)
 
     if not docs:
 
@@ -323,6 +361,15 @@ while True:
         for doc in docs
     )
 
+    if not context.strip():
+
+        print(
+            "\nAI: I could not find the answer "
+            "in the provided source.\n"
+        )
+
+        continue
+
     final_prompt = prompt.invoke(
         {
             "context": context,
@@ -330,10 +377,6 @@ while True:
         }
     )
 
-    response = llm.invoke(
-        final_prompt
-    )
+    response = llm.invoke(final_prompt)
 
-    print(
-        f"\nAI: {response.content}\n"
-                )
+    print(f"\nAI: {response.content}\n")
