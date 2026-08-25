@@ -1,7 +1,6 @@
 import os
-import random
+import time
 import tempfile
-import itertools
 
 import streamlit as st
 
@@ -38,7 +37,28 @@ AI_QUOTES = [
     "⚡ Fun fact: Over 90% of the world's data was created in just the last few years.",
     "⚡ Fun fact: RAG (Retrieval-Augmented Generation) is exactly how SHAKAL reads your sources!",
     "“The question of whether machines can think is like the question of whether submarines can swim.” — Edsger Dijkstra",
+    "⚡ Fun fact: Vector embeddings turn text into numbers so AI can measure meaning like distance.",
+    "“Learning is not attained by chance, it must be sought for with ardor.” — Abigail Adams",
 ]
+
+# Rotating fact picker (new fact on every processing, in order)
+if "fact_index" not in st.session_state:
+    st.session_state.fact_index = 0
+
+def next_fact():
+    fact = AI_QUOTES[st.session_state.fact_index % len(AI_QUOTES)]
+    st.session_state.fact_index += 1
+    return fact
+
+def processing_box(fact=None):
+    fact_html = f'<div class="processing-fact">💡 {fact}</div>' if fact else ""
+    return f"""
+    <div class="processing">
+        <div class="processing-main">Processing</div>
+        <div class="processing-message">[ aniket bhai ki taraf se hello! :) ]</div>
+        {fact_html}
+    </div>
+    """
 
 # ==========================================
 # MODERN CSS INJECTION
@@ -170,14 +190,11 @@ st.markdown(
     }
 
     /* ===== PERSONALITY PILLS — SINGLE CLICK, NO CUT NAMES ===== */
-
-    /* Hide the stray main widget label box */
     [data-testid="stRadio"] > label,
     [data-testid="stRadio"] > div > label {
         display: none !important;
     }
 
-    /* Pill container: wraps to next line on mobile instead of squeezing */
     [data-testid="stRadio"] div[role="radiogroup"] {
         display: flex !important;
         flex-direction: row !important;
@@ -186,7 +203,6 @@ st.markdown(
         justify-content: center !important;
     }
 
-    /* Individual pills */
     [data-testid="stRadio"] div[role="radiogroup"] label {
         background: rgba(255, 255, 255, 0.03) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -197,7 +213,7 @@ st.markdown(
         font-family: 'Inter', sans-serif !important;
         font-weight: 500 !important;
         font-size: 14px !important;
-        white-space: nowrap !important;   /* <- names NEVER split mid-word */
+        white-space: nowrap !important;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         backdrop-filter: blur(8px) !important;
         cursor: pointer !important;
@@ -213,7 +229,6 @@ st.markdown(
         box-shadow: 0 0 15px rgba(0, 242, 254, 0.15) !important;
     }
 
-    /* Nuke the native radio circle completely */
     [data-testid="stRadio"] div[role="radiogroup"] svg,
     [data-testid="stRadio"] div[role="radiogroup"] input[type="radio"],
     [data-testid="stRadio"] div[role="radiogroup"] [data-baseweb="radio"] {
@@ -228,7 +243,6 @@ st.markdown(
         margin: 0 !important;
     }
 
-    /* Selected pill (instant single-click visual update) */
     [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
         background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
         color: #0b0f19 !important;
@@ -468,11 +482,11 @@ st.markdown(
 )
 
 # ==========================================
-# UPLOAD SOURCES (ALL TYPES AT ONCE)
+# UPLOAD SOURCES (ALL TYPES, NO LIMIT)
 # ==========================================
 st.markdown('<div class="section-title">Upload Your Sources</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-subtitle">Give SHAKAL your study material.</div>', unsafe_allow_html=True)
-st.markdown('<div class="source-note">⚠️ You can process up to <b>3 sources</b> at a time — mix & match any type below.</div>', unsafe_allow_html=True)
+st.markdown('<div class="source-note">📚 Add as many sources as you want — mix & match PDFs, websites, YouTube links and images.</div>', unsafe_allow_html=True)
 
 col_left, col_right = st.columns(2, gap="medium")
 
@@ -494,28 +508,34 @@ total_sources = (
     + len(image_files or [])
 )
 
-st.caption(f"{total_sources}/3 sources selected")
+st.caption(f"{total_sources} source{'s' if total_sources != 1 else ''} selected")
 
 process_button = st.button("⚡ Process Sources", use_container_width=True, type="primary")
 
 if process_button:
     if total_sources == 0:
         st.warning("Please add at least one source.")
-    elif total_sources > 3:
-        st.error("Maximum 3 sources can be processed at a time.")
     else:
         all_docs = []
         source_names = []
         progress = st.progress(0)
         status = st.empty()
-        fact_cycle = itertools.cycle(AI_QUOTES)
+
+        # First status shows the hello note, later ones show AI facts
+        first_status = {"value": True}
 
         def show_status(main_text):
+            if first_status["value"]:
+                extra = '<div class="processing-message"> aniket bhai ki taraf se hello! :) </div>'
+                first_status["value"] = False
+            else:
+                extra = f'<div class="processing-fact">💡 {next_fact()}</div>'
+
             status.markdown(
                 f"""
                 <div class="processing">
                     <div class="processing-main">{main_text}</div>
-                    <div class="processing-fact">💡 {next(fact_cycle)}</div>
+                    {extra}
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -589,9 +609,9 @@ if process_button:
             st.session_state.sources = source_names
             st.session_state.source_ready = True
 
-        except Exception:
+        except Exception as error:
             status.empty()
-            st.error("Unable to process the selected source.")
+            st.error(f"Unable to process the selected source.\n\n🔍 Debug: {error}")
 
 if st.session_state.source_ready:
     st.markdown(
@@ -668,16 +688,13 @@ if query:
 
     with st.chat_message("assistant"):
         processing = st.empty()
-        processing.markdown(
-            f"""
-            <div class="processing">
-                <div class="processing-main">Processing</div>
-                <div class="processing-message">[ aniket bhai ki taraf se hello! :) ]</div>
-                <div class="processing-fact">💡 {random.choice(AI_QUOTES)}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+
+        # STEP 1: hello from aniket bhai
+        processing.markdown(processing_box(), unsafe_allow_html=True)
+        time.sleep(1.5)
+
+        # STEP 2: hello + rotating AI quote / fact
+        processing.markdown(processing_box(next_fact()), unsafe_allow_html=True)
 
         try:
             llm = ChatMistralAI(model="mistral-small-2506")
@@ -705,5 +722,5 @@ if query:
             st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
         except Exception as error:
-            status.empty()
-            st.error(f"Unable to process the selected source.\n\n🔍 Debug: {error}")
+            processing.empty()
+            st.error(f"Sorry, something went wrong while processing your request.\n\n🔍 Debug: {error}")
