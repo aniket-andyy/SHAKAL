@@ -1,23 +1,49 @@
 from dotenv import load_dotenv
-from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_core.documents import Document
-from youtube_transcript_api import YouTubeTranscriptApi
+
+from langchain_community.document_loaders import (
+    PyPDFLoader,
+    WebBaseLoader
+)
+
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter
+)
+
+from langchain_huggingface import (
+    HuggingFaceEmbeddings
+)
+
+from langchain_community.vectorstores import (
+    Chroma
+)
+
+from langchain_core.documents import (
+    Document
+)
+
+from youtube_transcript_api import (
+    YouTubeTranscriptApi
+)
 
 import requests
 import re
 import os
 
+
 load_dotenv()
 
+
 CHROMA_PATH = "chroma_db"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+
+EMBEDDING_MODEL = (
+    "sentence-transformers/all-MiniLM-L6-v2"
+)
+
 
 embedding_model = HuggingFaceEmbeddings(
     model_name=EMBEDDING_MODEL
 )
+
 
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
@@ -26,9 +52,11 @@ splitter = RecursiveCharacterTextSplitter(
 
 
 def load_pdf(pdf_path):
-    print(f"\nLoading PDF: {pdf_path}")
+
+    print(f"Loading PDF: {pdf_path}")
 
     loader = PyPDFLoader(pdf_path)
+
     docs = loader.load()
 
     print(f"Loaded {len(docs)} PDF pages.")
@@ -37,9 +65,11 @@ def load_pdf(pdf_path):
 
 
 def load_webpage(url):
-    print(f"\nLoading webpage: {url}")
+
+    print(f"Loading webpage: {url}")
 
     loader = WebBaseLoader(url)
+
     docs = loader.load()
 
     print(f"Loaded {len(docs)} webpage documents.")
@@ -48,6 +78,7 @@ def load_webpage(url):
 
 
 def extract_youtube_video_id(url):
+
     patterns = [
         r"(?:youtube\.com/watch\?v=)([^&]+)",
         r"(?:youtu\.be/)([^?]+)",
@@ -55,21 +86,35 @@ def extract_youtube_video_id(url):
     ]
 
     for pattern in patterns:
-        match = re.search(pattern, url)
+
+        match = re.search(
+            pattern,
+            url
+        )
 
         if match:
             return match.group(1)
 
-    raise ValueError("Invalid YouTube URL.")
+    raise ValueError(
+        "Invalid YouTube URL."
+    )
 
 
 def load_youtube(url):
-    print(f"\nLoading YouTube transcript: {url}")
 
-    video_id = extract_youtube_video_id(url)
+    print(
+        f"Loading YouTube transcript: {url}"
+    )
+
+    video_id = extract_youtube_video_id(
+        url
+    )
 
     api = YouTubeTranscriptApi()
-    transcript = api.fetch(video_id)
+
+    transcript = api.fetch(
+        video_id
+    )
 
     text = " ".join(
         segment.text
@@ -85,33 +130,48 @@ def load_youtube(url):
         }
     )
 
-    print("YouTube transcript extracted.")
+    print(
+        "YouTube transcript extracted."
+    )
 
     return [document]
 
 
 def load_image(image_path):
-    print(f"\nProcessing image: {image_path}")
 
-    api_key = os.getenv("MISTRAL_API_KEY")
+    print(
+        f"Processing image: {image_path}"
+    )
+
+    api_key = os.getenv(
+        "MISTRAL_API_KEY"
+    )
 
     if not api_key:
+
         raise ValueError(
-            "MISTRAL_API_KEY not found in .env"
+            "MISTRAL_API_KEY not found."
         )
 
-    with open(image_path, "rb") as image_file:
+    with open(
+        image_path,
+        "rb"
+    ) as image_file:
+
         response = requests.post(
             "https://api.mistral.ai/v1/ocr",
             headers={
-                "Authorization": f"Bearer {api_key}"
+                "Authorization":
+                    f"Bearer {api_key}"
             },
             files={
                 "file": image_file
             },
             data={
-                "model": "mistral-ocr-latest"
-            }
+                "model":
+                    "mistral-ocr-latest"
+            },
+            timeout=120
         )
 
     response.raise_for_status()
@@ -120,15 +180,28 @@ def load_image(image_path):
 
     text_parts = []
 
-    for page in result.get("pages", []):
-        page_markdown = page.get("markdown", "")
+    for page in result.get(
+        "pages",
+        []
+    ):
+
+        page_markdown = page.get(
+            "markdown",
+            ""
+        )
 
         if page_markdown:
-            text_parts.append(page_markdown)
 
-    text = "\n\n".join(text_parts)
+            text_parts.append(
+                page_markdown
+            )
+
+    text = "\n\n".join(
+        text_parts
+    )
 
     if not text:
+
         raise ValueError(
             "No text could be extracted from the image."
         )
@@ -141,19 +214,28 @@ def load_image(image_path):
         }
     )
 
-    print("Image OCR completed.")
+    print(
+        "Image OCR completed."
+    )
 
     return [document]
 
 
 def add_to_chroma(docs):
+
     if not docs:
-        print("No documents found.")
-        return
 
-    chunks = splitter.split_documents(docs)
+        raise ValueError(
+            "No documents found."
+        )
 
-    print(f"Created {len(chunks)} chunks.")
+    chunks = splitter.split_documents(
+        docs
+    )
+
+    print(
+        f"Created {len(chunks)} chunks."
+    )
 
     vectorstore = Chroma.from_documents(
         documents=chunks,
@@ -161,56 +243,113 @@ def add_to_chroma(docs):
         persist_directory=CHROMA_PATH
     )
 
-    print("Documents successfully stored in Chroma.")
+    print(
+        "Documents successfully stored in Chroma."
+    )
+
+    return vectorstore
 
 
-print("\n======================================")
-print("        RAG DATABASE BUILDER")
-print("======================================")
+if __name__ == "__main__":
 
-print("\nSelect source:")
-print("1. PDF")
-print("2. Webpage")
-print("3. YouTube URL")
-print("4. Image")
+    print(
+        "\n======================================"
+    )
 
-choice = input(
-    "\nChoose source (1/2/3/4): "
-).strip()
+    print(
+        "        RAG DATABASE BUILDER"
+    )
 
-if choice == "1":
-    path = input(
-        "Enter PDF path: "
+    print(
+        "======================================"
+    )
+
+    print(
+        "\nSelect source:"
+    )
+
+    print(
+        "1. PDF"
+    )
+
+    print(
+        "2. Webpage"
+    )
+
+    print(
+        "3. YouTube URL"
+    )
+
+    print(
+        "4. Image"
+    )
+
+    choice = input(
+        "\nChoose source (1/2/3/4): "
     ).strip()
 
-    docs = load_pdf(path)
-    add_to_chroma(docs)
+    if choice == "1":
 
-elif choice == "2":
-    url = input(
-        "Enter webpage URL: "
-    ).strip()
+        path = input(
+            "Enter PDF path: "
+        ).strip()
 
-    docs = load_webpage(url)
-    add_to_chroma(docs)
+        docs = load_pdf(
+            path
+        )
 
-elif choice == "3":
-    url = input(
-        "Enter YouTube URL: "
-    ).strip()
+        add_to_chroma(
+            docs
+        )
 
-    docs = load_youtube(url)
-    add_to_chroma(docs)
+    elif choice == "2":
 
-elif choice == "4":
-    path = input(
-        "Enter image path: "
-    ).strip()
+        url = input(
+            "Enter webpage URL: "
+        ).strip()
 
-    docs = load_image(path)
-    add_to_chroma(docs)
+        docs = load_webpage(
+            url
+        )
 
-else:
-    print("\nInvalid selection.")
+        add_to_chroma(
+            docs
+        )
 
-print("\nDatabase operation completed.") 
+    elif choice == "3":
+
+        url = input(
+            "Enter YouTube URL: "
+        ).strip()
+
+        docs = load_youtube(
+            url
+        )
+
+        add_to_chroma(
+            docs
+        )
+
+    elif choice == "4":
+
+        path = input(
+            "Enter image path: "
+        ).strip()
+
+        docs = load_image(
+            path
+        )
+
+        add_to_chroma(
+            docs
+        )
+
+    else:
+
+        print(
+            "\nInvalid selection."
+        )
+
+    print(
+        "\nDatabase operation completed."
+    )
