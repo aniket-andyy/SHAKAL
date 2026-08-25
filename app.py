@@ -51,616 +51,391 @@ def next_fact():
     return fact
 
 # ==========================================
-# ASCII ART LOGO
+# ASCII LOGO (flush-left, no indentation!)
 # ==========================================
-ASCII_LOGO = """
-<pre class="ascii-logo">
-  ____  _   _    _    _  __    _    _     
- / ___|| | | |  / \\  | |/ /   / \\  | |    
- \\___ \\| |_| | / _ \\ | ' /   / _ \\ | |    
-  ___) |  _  |/ ___ \\| . \\  / ___ \\| |___ 
+ASCII_LOGO = """<pre class="ascii-logo">  ____  _   _    _    _  __    _    _
+ / ___|| | | |  / \\  | |/ /   / \\  | |
+ \\___ \\| |_| | / _ \\ | ' /   / _ \\ | |
+  ___) |  _  |/ ___ \\| . \\  / ___ \\| |___
  |____/|_| |_/_/   \\_\\_|\\_\\/_/   \\_\\_____|
-</pre>
-"""
-
-def ascii_box(content, title=None):
-    """Wrap content in an ASCII box panel."""
-    lines = content.split("\n")
-    if not lines:
-        return ""
-    width = max(len(line) for line in lines if line) + 4
-    width = max(width, 50)
-    top = "╭" + "─" * (width - 2) + "╮"
-    bottom = "╰" + "─" * (width - 2) + "╯"
-    title_line = ""
-    if title:
-        title_line = f"│ ▓ {title.upper()}" + " " * (width - len(title) - 5) + "│\n"
-    body = "\n".join(f"│   {line:<{width - 4}}│" for line in lines)
-    return f"<pre class='ascii-box'>{top}\n{title_line}{body}\n{bottom}</pre>"
+</pre>"""
 
 # ==========================================
 # TERMINAL CSS
 # ==========================================
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;500;700&display=swap');
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-    /* ===== GLOBAL RESET ===== */
-    html, body, [class*="css"], .stApp {
-        font-family: 'JetBrains Mono', 'Courier New', monospace !important;
-        background: #0a0e0a !important;
-        color: #33ff33 !important;
-    }
+html, body, [class*="css"], .stApp {
+    font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+    background: #0a0e0a !important;
+    color: #33ff33 !important;
+}
 
-    /* CRT Scanlines */
-    .stApp::before {
-        content: "";
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: repeating-linear-gradient(
-            0deg,
-            rgba(18, 16, 16, 0) 0px,
-            rgba(18, 16, 16, 0) 2px,
-            rgba(0, 0, 0, 0.15) 3px,
-            rgba(0, 0, 0, 0.15) 3px
-        );
-        pointer-events: none;
-        z-index: 9999;
-    }
+/* CRT Scanlines */
+.stApp::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 3px
+    );
+    pointer-events: none;
+    z-index: 9999;
+}
 
-    /* Subtle screen flicker */
-    @keyframes flicker {
-        0%, 100% { opacity: 0.98; }
-        50% { opacity: 1; }
-    }
-    .stApp {
-        animation: flicker 4s infinite;
-    }
+@keyframes flicker { 0%,100% {opacity:.98;} 50% {opacity:1;} }
+.stApp { animation: flicker 4s infinite; }
 
-    /* Hide Streamlit branding */
-    #MainMenu, footer, header, .stDeployButton,
-    button[kind="header"], [data-testid="stHeader"] {
-        visibility: hidden !important;
-        height: 0 !important;
-    }
+#MainMenu, footer, header, .stDeployButton, [data-testid="stHeader"] {
+    visibility: hidden !important; height: 0 !important;
+}
 
-    .block-container {
-        max-width: 1000px;
-        padding: 2rem 1rem 4rem 1rem !important;
-    }
+.block-container {
+    max-width: 1000px;
+    padding: 2rem 1rem 4rem 1rem !important;
+}
 
-    /* ===== ASCII LOGO ===== */
-    .ascii-logo {
-        font-family: 'Share Tech Mono', 'Courier New', monospace;
-        color: #33ff33;
-        text-shadow:
-            0 0 5px #33ff33,
-            0 0 10px #33ff33,
-            0 0 20px #00ff00;
-        font-size: clamp(9px, 1.4vw, 18px);
-        line-height: 1;
-        text-align: center;
-        margin: 20px 0 10px 0;
-        letter-spacing: 1px;
-        white-space: pre;
-        font-weight: 400;
-    }
+pre { background: transparent !important; }
 
-    .ascii-subtitle {
-        font-family: 'Share Tech Mono', monospace;
-        color: #ffcc00;
-        text-shadow: 0 0 8px #ffcc00;
-        text-align: center;
-        font-size: clamp(12px, 1.6vw, 18px);
-        letter-spacing: 8px;
-        margin: 8px 0;
-    }
+/* ===== LOGO ===== */
+.ascii-logo {
+    font-family: 'Share Tech Mono', monospace;
+    color: #33ff33;
+    text-shadow: 0 0 5px #33ff33, 0 0 10px #33ff33, 0 0 20px #00ff00;
+    font-size: clamp(7px, 2.2vw, 16px);
+    line-height: 1.15;
+    text-align: center;
+    margin: 20px 0 10px 0;
+    white-space: pre;
+    overflow-x: hidden;
+}
 
-    .ascii-tagline {
-        text-align: center;
-        color: #33ff33;
-        font-size: 14px;
-        margin: 4px 0 24px 0;
-        opacity: 0.7;
-    }
+.ascii-subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    color: #ffcc00;
+    text-shadow: 0 0 8px #ffcc00;
+    text-align: center;
+    font-size: clamp(12px, 1.6vw, 18px);
+    letter-spacing: 8px;
+    margin: 8px 0;
+}
 
-    .ascii-tagline::before { content: ">> "; color: #ffcc00; }
-    .ascii-tagline::after  { content: " <<"; color: #ffcc00; }
+.ascii-tagline {
+    text-align: center;
+    color: #33ff33;
+    font-size: 14px;
+    margin: 4px 0 24px 0;
+    opacity: 0.7;
+}
+.ascii-tagline::before { content: ">> "; color: #ffcc00; }
+.ascii-tagline::after  { content: " <<"; color: #ffcc00; }
 
-    .ascii-meta {
-        font-family: 'Share Tech Mono', monospace;
-        text-align: center;
-        color: #1a7a1a;
-        font-size: 12px;
-        margin: 4px 0;
-        letter-spacing: 1px;
-    }
+.ascii-meta {
+    font-family: 'Share Tech Mono', monospace;
+    text-align: center;
+    color: #1a7a1a;
+    font-size: 12px;
+    margin: 4px 0;
+}
+.ascii-meta b { color: #33ff33; }
+.ascii-meta a { color: #00ffff; text-decoration: none; }
 
-    .ascii-meta b { color: #33ff33; }
-    .ascii-meta a { color: #00ffff; text-decoration: none; }
-    .ascii-meta a:hover { color: #33ff33; text-shadow: 0 0 6px #33ff33; }
+.ascii-hr {
+    color: #1a7a1a;
+    text-align: center;
+    font-size: 12px;
+    overflow: hidden;
+    margin: 20px 0;
+    white-space: nowrap;
+}
 
-    /* ===== SECTION HEADINGS (ASCII boxes) ===== */
-    .ascii-section {
-        font-family: 'Share Tech Mono', monospace;
-        color: #ffcc00;
-        text-shadow: 0 0 8px #ffcc00;
-        font-size: clamp(14px, 1.8vw, 18px);
-        font-weight: 400;
-        margin: 40px 0 12px 0;
-        letter-spacing: 2px;
-    }
+/* ===== SECTIONS ===== */
+.ascii-section {
+    font-family: 'Share Tech Mono', monospace;
+    color: #ffcc00;
+    text-shadow: 0 0 8px #ffcc00;
+    font-size: clamp(14px, 1.8vw, 18px);
+    margin: 40px 0 12px 0;
+    letter-spacing: 2px;
+}
+.ascii-section::before { content: "╭─ "; }
+.ascii-section::after  { content: " ────────────╮"; opacity: 0.5; }
 
-    .ascii-section::before { content: "╭─ "; color: #ffcc00; }
-    .ascii-section::after  { content: " ────────────────────────────╮"; color: #ffcc00; opacity: 0.5; }
+.ascii-subsection {
+    color: #1a7a1a;
+    font-size: 13px;
+    margin-bottom: 20px;
+    padding-left: 24px;
+}
+.ascii-subsection::before { content: "│  "; color: #ffcc00; }
 
-    .ascii-subsection {
-        color: #1a7a1a;
-        font-size: 13px;
-        margin-bottom: 20px;
-        padding-left: 24px;
-    }
-    .ascii-subsection::before { content: "│  "; color: #ffcc00; }
+.ascii-note {
+    color: #ffcc00;
+    font-size: 13px;
+    padding: 10px 16px;
+    border: 1px dashed #ffcc00;
+    margin-bottom: 20px;
+    background: rgba(255, 204, 0, 0.03);
+}
+.ascii-note::before { content: "$ "; color: #33ff33; font-weight: 700; }
 
-    .ascii-note {
-        color: #ffcc00;
-        font-size: 13px;
-        padding: 10px 16px;
-        border: 1px dashed #ffcc00;
-        border-radius: 2px;
-        margin-bottom: 20px;
-        background: rgba(255, 204, 0, 0.03);
-    }
-    .ascii-note::before { content: "$ "; color: #33ff33; font-weight: 700; }
+/* ===== BUTTONS (brackets are literal in labels now) ===== */
+.stButton > button {
+    font-family: 'Share Tech Mono', monospace !important;
+    background: transparent !important;
+    color: #33ff33 !important;
+    border: 1px solid #33ff33 !important;
+    border-radius: 0 !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+    transition: all 0.15s linear !important;
+    box-shadow: none !important;
+    font-weight: 400 !important;
+    backdrop-filter: none !important;
+}
 
-    /* ===== ASCII BOXES (for source ready, processing, chat) ===== */
-    .ascii-box {
-        font-family: 'Share Tech Mono', monospace;
-        color: #33ff33;
-        font-size: 13px;
-        line-height: 1.4;
-        margin: 12px 0;
-        text-shadow: 0 0 3px #33ff33;
-        white-space: pre;
-        overflow-x: auto;
-    }
+.stButton > button:hover {
+    background: #33ff33 !important;
+    color: #0a0e0a !important;
+    box-shadow: 0 0 15px #33ff33 !important;
+    transform: none !important;
+}
 
-    .ascii-box .title { color: #ffcc00; text-shadow: 0 0 6px #ffcc00; }
-    .ascii-box .ok    { color: #00ff00; }
-    .ascii-box .err   { color: #ff3333; text-shadow: 0 0 6px #ff3333; }
-    .ascii-box .dim   { color: #1a7a1a; }
-    .ascii-box .amber { color: #ffcc00; }
-    .ascii-box .cyan  { color: #00ffff; text-shadow: 0 0 5px #00ffff; }
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="stBaseButton-primary"],
+.stButton > button[data-testid="baseButton-primary"] {
+    background: #ffcc00 !important;
+    color: #0a0e0a !important;
+    border: 1px solid #ffcc00 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 12px #ffcc00 !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background: #ff9900 !important;
+    box-shadow: 0 0 20px #ff9900 !important;
+}
 
-    /* ===== TERMINAL BUTTONS ===== */
-    .stButton > button,
-    button[kind="secondary"] {
-        font-family: 'Share Tech Mono', monospace !important;
-        background: transparent !important;
-        color: #33ff33 !important;
-        border: 1px solid #33ff33 !important;
-        border-radius: 0 !important;
-        padding: 8px 16px !important;
-        font-size: 13px !important;
-        letter-spacing: 1px !important;
-        text-transform: uppercase !important;
-        transition: all 0.15s linear !important;
-        backdrop-filter: none !important;
-        box-shadow: none !important;
-        font-weight: 400 !important;
-    }
+/* ===== PERSONALITY PILLS (scoped ONLY to radiogroup options) ===== */
+[data-testid="stRadio"] [role="radiogroup"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    justify-content: flex-start !important;
+    margin-left: 24px !important;
+}
 
-    .stButton > button::before { content: "[ "; color: #ffcc00; }
-    .stButton > button::after  { content: " ]"; color: #ffcc00; }
+[data-testid="stRadio"] [role="radiogroup"] label {
+    font-family: 'Share Tech Mono', monospace !important;
+    background: transparent !important;
+    color: #33ff33 !important;
+    border: 1px solid #1a7a1a !important;
+    border-radius: 0 !important;
+    padding: 8px 14px !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    letter-spacing: 1px !important;
+    white-space: nowrap !important;
+    transition: all 0.15s linear !important;
+    cursor: pointer !important;
+    text-transform: uppercase !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
 
-    .stButton > button:hover {
-        background: #33ff33 !important;
-        color: #0a0e0a !important;
-        box-shadow: 0 0 15px #33ff33, 0 0 30px #00ff00 !important;
-        transform: none !important;
-    }
+[data-testid="stRadio"] [role="radiogroup"] label::before { content: "[ "; color: #1a7a1a; }
+[data-testid="stRadio"] [role="radiogroup"] label::after  { content: " ]"; color: #1a7a1a; }
 
-    .stButton > button:hover::before,
-    .stButton > button:hover::after {
-        color: #0a0e0a !important;
-    }
+[data-testid="stRadio"] [role="radiogroup"] label:hover {
+    border-color: #33ff33 !important;
+    text-shadow: 0 0 6px #33ff33 !important;
+    box-shadow: 0 0 12px #33ff33 !important;
+}
 
-    /* Primary button = filled amber terminal */
-    .stButton > button[kind="primary"],
-    .stButton > button[data-testid="stBaseButton-primary"],
-    .stButton > button[data-testid="baseButton-primary"] {
-        background: #ffcc00 !important;
-        color: #0a0e0a !important;
-        border: 1px solid #ffcc00 !important;
-        font-weight: 700 !important;
-        box-shadow: 0 0 12px #ffcc00 !important;
-    }
-    .stButton > button[kind="primary"]:hover {
-        background: #ff9900 !important;
-        box-shadow: 0 0 20px #ff9900, 0 0 40px #ffcc00 !important;
-    }
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+    background: #ffcc00 !important;
+    color: #0a0e0a !important;
+    border-color: #ffcc00 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 15px #ffcc00 !important;
+    text-shadow: none !important;
+}
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked)::before,
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked)::after {
+    color: #0a0e0a !important;
+}
 
-    /* ===== PERSONALITY PILLS (ASCII style) ===== */
-    [data-testid="stRadio"] > label,
-    [data-testid="stRadio"] > div > label {
-        display: none !important;
-    }
+/* Hide only the radio DOT, never the label */
+[data-testid="stRadio"] [role="radiogroup"] svg,
+[data-testid="stRadio"] [role="radiogroup"] input[type="radio"],
+[data-testid="stRadio"] [role="radiogroup"] [data-baseweb="radio"] {
+    display: none !important;
+    width: 0 !important; height: 0 !important; margin: 0 !important;
+}
+[data-testid="stRadio"] [role="radiogroup"] label > div {
+    padding: 0 !important; margin: 0 !important;
+}
 
-    [data-testid="stRadio"] div[role="radiogroup"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 10px !important;
-        justify-content: flex-start !important;
-        margin-left: 24px !important;
-    }
+/* ===== UPLOADERS / TEXTAREAS ===== */
+[data-testid="stFileUploader"] {
+    border: 1px dashed #33ff33 !important;
+    background: rgba(51, 255, 51, 0.02) !important;
+    border-radius: 0 !important;
+}
+[data-testid="stFileUploader"] * { color: #33ff33 !important; }
+[data-testid="stFileUploaderDropzone"] {
+    border: 1px dashed #33ff33 !important;
+    background: transparent !important;
+}
+[data-testid="stFileUploader"] button {
+    background: transparent !important;
+    color: #ffcc00 !important;
+    border: 1px solid #ffcc00 !important;
+    border-radius: 0 !important;
+}
 
-    [data-testid="stRadio"] div[role="radiogroup"] label {
-        font-family: 'Share Tech Mono', monospace !important;
-        background: transparent !important;
-        color: #33ff33 !important;
-        border: 1px solid #1a7a1a !important;
-        border-radius: 0 !important;
-        padding: 8px 14px !important;
-        margin: 0 !important;
-        font-size: 13px !important;
-        letter-spacing: 1px !important;
-        white-space: nowrap !important;
-        transition: all 0.15s linear !important;
-        cursor: pointer !important;
-        text-transform: uppercase !important;
-        backdrop-filter: none !important;
-        box-shadow: none !important;
-    }
+textarea, [data-testid="stTextArea"] textarea {
+    font-family: 'Share Tech Mono', monospace !important;
+    background: #0a0e0a !important;
+    color: #33ff33 !important;
+    border: 1px solid #1a7a1a !important;
+    border-radius: 0 !important;
+    caret-color: #33ff33 !important;
+}
+textarea:focus { border-color: #33ff33 !important; box-shadow: 0 0 10px #33ff33 !important; }
+textarea::placeholder { color: #1a7a1a !important; }
 
-    [data-testid="stRadio"] div[role="radiogroup"] label::before { content: "[ "; color: #1a7a1a; }
-    [data-testid="stRadio"] div[role="radiogroup"] label::after  { content: " ]"; color: #1a7a1a; }
+/* ===== PROCESSING BOX ===== */
+.processing {
+    font-family: 'Share Tech Mono', monospace;
+    color: #33ff33;
+    background: rgba(51, 255, 51, 0.03);
+    border: 1px solid #33ff33;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    text-shadow: 0 0 4px #33ff33;
+    box-shadow: 0 0 15px rgba(51, 255, 51, 0.2);
+}
+.processing-main {
+    font-size: 15px;
+    color: #ffcc00;
+    text-shadow: 0 0 8px #ffcc00;
+    font-weight: 700;
+}
+.processing-main::before { content: "▶ "; }
+@keyframes blink-cursor { 0%,49% {opacity:1;} 50%,100% {opacity:0;} }
+.processing-main::after { content: "█"; animation: blink-cursor 1s infinite; color: #33ff33; }
+.processing-message { color: #00ffff; margin-top: 6px; }
+.processing-message::before { content: "$ "; color: #33ff33; }
+.processing-fact { color: #33ff33; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #1a7a1a; }
+.processing-fact::before { content: "ℹ "; color: #ffcc00; }
 
-    [data-testid="stRadio"] div[role="radiogroup"] label:hover {
-        border-color: #33ff33 !important;
-        color: #33ff33 !important;
-        text-shadow: 0 0 6px #33ff33 !important;
-        box-shadow: 0 0 12px #33ff33 !important;
-    }
-    [data-testid="stRadio"] div[role="radiogroup"] label:hover::before,
-    [data-testid="stRadio"] div[role="radiogroup"] label:hover::after {
-        color: #33ff33 !important;
-    }
+/* ===== CHAT ===== */
+.stChatMessage, [data-testid="stChatMessage"] {
+    background: transparent !important;
+    border: 1px solid #1a7a1a !important;
+    border-radius: 0 !important;
+    margin: 12px 0 !important;
+    padding: 12px 16px !important;
+}
+[data-testid="stChatMessage"] p { color: #33ff33 !important; }
+[data-testid="stChatMessage"] pre { background: #0f140f !important; color: #33ff33 !important; }
 
-    /* Selected personality = filled amber */
-    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
-        background: #ffcc00 !important;
-        color: #0a0e0a !important;
-        border-color: #ffcc00 !important;
-        font-weight: 700 !important;
-        box-shadow: 0 0 15px #ffcc00 !important;
-        text-shadow: none !important;
-    }
-    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked)::before,
-    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked)::after {
-        color: #0a0e0a !important;
-    }
+.stChatInput textarea, [data-testid="stChatInputTextArea"] {
+    font-family: 'Share Tech Mono', monospace !important;
+    background: #0a0e0a !important;
+    color: #33ff33 !important;
+    border: 1px solid #33ff33 !important;
+    border-radius: 0 !important;
+    padding: 12px 16px !important;
+    caret-color: #33ff33 !important;
+    min-height: 50px !important;
+    line-height: 24px !important;
+}
+.stChatInput textarea::placeholder, [data-testid="stChatInputTextArea"]::placeholder {
+    color: #1a7a1a !important;
+}
+.stChatInput textarea:focus, [data-testid="stChatInputTextArea"]:focus {
+    border-color: #ffcc00 !important;
+    box-shadow: 0 0 12px #ffcc00 !important;
+}
 
-    /* Kill native radio dot */
-    [data-testid="stRadio"] div[role="radiogroup"] svg,
-    [data-testid="stRadio"] div[role="radiogroup"] input[type="radio"],
-    [data-testid="stRadio"] div[role="radiogroup"] [data-baseweb="radio"] {
-        display: none !important;
-    }
-    [data-testid="stRadio"] div[role="radiogroup"] label > div {
-        padding: 0 !important; margin: 0 !important;
-    }
+.source-chip {
+    font-family: 'Share Tech Mono', monospace;
+    color: #33ff33;
+    border: 1px solid #1a7a1a;
+    padding: 6px 12px;
+    margin: 4px;
+    display: inline-block;
+    font-size: 12px;
+    text-align: center;
+    width: 100%;
+}
 
-    /* ===== FILE UPLOADER — terminal style ===== */
-    [data-testid="stFileUploader"] {
-        border: 1px dashed #33ff33 !important;
-        background: rgba(51, 255, 51, 0.02) !important;
-        border-radius: 0 !important;
-        color: #33ff33 !important;
-    }
-    [data-testid="stFileUploader"] * {
-        color: #33ff33 !important;
-    }
-    [data-testid="stFileUploaderDropzone"] {
-        border: 1px dashed #33ff33 !important;
-        background: transparent !important;
-        color: #33ff33 !important;
-    }
-    [data-testid="stFileUploader"] button {
-        background: transparent !important;
-        color: #ffcc00 !important;
-        border: 1px solid #ffcc00 !important;
-        border-radius: 0 !important;
-    }
-    [data-testid="stFileUploader"] button:hover {
-        background: #ffcc00 !important;
-        color: #0a0e0a !important;
-    }
+.personality-info {
+    text-align: center;
+    color: #1a7a1a;
+    font-size: 12px;
+    margin-top: 14px;
+}
 
-    /* Text areas */
-    textarea, [data-testid="stTextArea"] textarea {
-        font-family: 'Share Tech Mono', monospace !important;
-        background: #0a0e0a !important;
-        color: #33ff33 !important;
-        border: 1px solid #1a7a1a !important;
-        border-radius: 0 !important;
-        caret-color: #33ff33 !important;
-    }
-    textarea:focus {
-        border-color: #33ff33 !important;
-        box-shadow: 0 0 10px #33ff33 !important;
-    }
-    textarea::placeholder {
-        color: #1a7a1a !important;
-    }
+[data-testid="stCaption"] { color: #1a7a1a !important; font-family: 'Share Tech Mono', monospace !important; }
+[data-testid="stAlert"] {
+    background: transparent !important;
+    border: 1px solid #ffcc00 !important;
+    border-radius: 0 !important;
+    color: #ffcc00 !important;
+    font-family: 'Share Tech Mono', monospace !important;
+}
+[data-testid="stAlert"] * { color: #ffcc00 !important; }
 
-    /* ===== PROCESSING BOX (ASCII terminal) ===== */
-    .processing {
-        font-family: 'Share Tech Mono', monospace;
-        color: #33ff33;
-        background: rgba(51, 255, 51, 0.03);
-        border: 1px solid #33ff33;
-        padding: 16px 20px;
-        margin: 16px 0;
-        font-size: 13px;
-        line-height: 1.5;
-        text-shadow: 0 0 4px #33ff33;
-        box-shadow: 0 0 15px rgba(51, 255, 51, 0.2);
-    }
+.stProgress > div > div { background: #1a7a1a !important; border-radius: 0 !important; }
+.stProgress > div > div > div > div {
+    background: #33ff33 !important;
+    box-shadow: 0 0 10px #33ff33 !important;
+    border-radius: 0 !important;
+}
 
-    .processing::before {
-        content: "┌──────────────────────────────────────┐";
-        display: block;
-        color: #ffcc00;
-        margin-bottom: 8px;
-    }
-    .processing::after {
-        content: "└──────────────────────────────────────┘";
-        display: block;
-        color: #ffcc00;
-        margin-top: 8px;
-    }
+.source-ready {
+    font-family: 'Share Tech Mono', monospace;
+    color: #33ff33;
+    border: 1px solid #00ff00;
+    padding: 14px 20px;
+    margin: 16px 0;
+    background: rgba(0, 255, 0, 0.03);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+}
+.source-ready-title {
+    color: #00ff00;
+    text-shadow: 0 0 8px #00ff00;
+    font-size: 15px;
+    font-weight: 700;
+}
+.source-ready-title::before { content: "✓ "; }
+.source-ready-text { color: #1a7a1a; margin-top: 6px; font-size: 12px; }
+.source-ready-text::before { content: "> "; color: #33ff33; }
 
-    .processing-main {
-        font-size: 15px;
-        color: #ffcc00;
-        text-shadow: 0 0 8px #ffcc00;
-        font-weight: 700;
-        letter-spacing: 1px;
-    }
-    .processing-main::before { content: "▶ "; }
-
-    .processing-message {
-        color: #00ffff;
-        margin-top: 6px;
-        text-shadow: 0 0 4px #00ffff;
-    }
-    .processing-message::before { content: "$ "; color: #33ff33; }
-
-    .processing-fact {
-        color: #33ff33;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px dashed #1a7a1a;
-    }
-    .processing-fact::before { content: "ℹ "; color: #ffcc00; }
-
-    /* Blinking cursor for processing */
-    @keyframes blink-cursor {
-        0%, 49% { opacity: 1; }
-        50%, 100% { opacity: 0; }
-    }
-    .processing-main::after {
-        content: "█";
-        animation: blink-cursor 1s infinite;
-        color: #33ff33;
-    }
-
-    /* ===== CHAT MESSAGES ===== */
-    .stChatMessage, [data-testid="stChatMessage"] {
-        background: transparent !important;
-        border: 1px solid #1a7a1a !important;
-        border-radius: 0 !important;
-        margin: 12px 0 !important;
-        padding: 12px 16px !important;
-    }
-
-    /* User messages */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
-        border-color: #00ffff !important;
-        box-shadow: 0 0 8px rgba(0, 255, 255, 0.2) !important;
-    }
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) p {
-        color: #00ffff !important;
-    }
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"])::before {
-        content: "┌─ USER ───────────────────────────────────────";
-        display: block;
-        color: #00ffff;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 11px;
-        margin-bottom: 6px;
-        letter-spacing: 1px;
-    }
-
-    /* Assistant messages */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
-        border-color: #33ff33 !important;
-        box-shadow: 0 0 8px rgba(51, 255, 51, 0.2) !important;
-    }
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) p {
-        color: #33ff33 !important;
-        text-shadow: 0 0 2px #33ff33 !important;
-    }
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])::before {
-        content: "┌─ SHAKAL ─────────────────────────────────────";
-        display: block;
-        color: #33ff33;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 11px;
-        margin-bottom: 6px;
-        letter-spacing: 1px;
-        text-shadow: 0 0 5px #33ff33;
-    }
-
-    /* Hide native avatar images, replace with text */
-    [data-testid="chatAvatarIcon-user"] img,
-    [data-testid="chatAvatarIcon-assistant"] img {
-        display: none !important;
-    }
-    [data-testid="chatAvatarIcon-user"]::before {
-        content: "user";
-        color: #00ffff;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 10px;
-    }
-    [data-testid="chatAvatarIcon-assistant"]::before {
-        content: "AI";
-        color: #33ff33;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 10px;
-    }
-
-    /* ===== CHAT INPUT (terminal prompt) ===== */
-    .stChatInput, [data-testid="stChatInput"] {
-        background: #0a0e0a !important;
-    }
-
-    .stChatInput textarea,
-    [data-testid="stChatInputTextArea"] {
-        font-family: 'Share Tech Mono', monospace !important;
-        background: #0a0e0a !important;
-        color: #33ff33 !important;
-        border: 1px solid #33ff33 !important;
-        border-radius: 0 !important;
-        padding: 12px 16px !important;
-        caret-color: #33ff33 !important;
-        min-height: 50px !important;
-        line-height: 24px !important;
-    }
-
-    .stChatInput textarea::placeholder,
-    [data-testid="stChatInputTextArea"]::placeholder {
-        color: #1a7a1a !important;
-        font-style: normal !important;
-    }
-
-    .stChatInput textarea:focus,
-    [data-testid="stChatInputTextArea"]:focus {
-        border-color: #ffcc00 !important;
-        box-shadow: 0 0 12px #ffcc00 !important;
-    }
-
-    /* Source chips (ASCII) */
-    .source-chip {
-        font-family: 'Share Tech Mono', monospace;
-        color: #33ff33;
-        border: 1px solid #1a7a1a;
-        padding: 6px 12px;
-        margin: 4px;
-        display: inline-block;
-        font-size: 12px;
-        text-align: center;
-        width: 100%;
-    }
-
-    .personality-info {
-        text-align: center;
-        color: #1a7a1a;
-        font-size: 12px;
-        margin-top: 14px;
-        letter-spacing: 1px;
-    }
-
-    /* Captions & warnings */
-    [data-testid="stCaption"] {
-        color: #1a7a1a !important;
-        font-family: 'Share Tech Mono', monospace !important;
-    }
-    [data-testid="stAlert"] {
-        background: transparent !important;
-        border: 1px solid #ffcc00 !important;
-        border-radius: 0 !important;
-        color: #ffcc00 !important;
-        font-family: 'Share Tech Mono', monospace !important;
-    }
-    [data-testid="stAlert"] * {
-        color: #ffcc00 !important;
-    }
-
-    /* Progress bar = terminal style */
-    .stProgress > div > div {
-        background: #1a7a1a !important;
-        border-radius: 0 !important;
-    }
-    .stProgress > div > div > div > div {
-        background: #33ff33 !important;
-        box-shadow: 0 0 10px #33ff33 !important;
-        border-radius: 0 !important;
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #0a0e0a; }
-    ::-webkit-scrollbar-thumb { background: #1a7a1a; }
-    ::-webkit-scrollbar-thumb:hover { background: #33ff33; }
-
-    /* Selection */
-    ::selection {
-        background: #33ff33;
-        color: #0a0e0a;
-    }
-
-    /* Links */
-    a { color: #00ffff !important; text-decoration: none !important; }
-    a:hover { color: #33ff33 !important; text-shadow: 0 0 8px #33ff33 !important; }
-
-    /* Source ready ASCII panel */
-    .source-ready {
-        font-family: 'Share Tech Mono', monospace;
-        color: #33ff33;
-        border: 1px solid #00ff00;
-        padding: 14px 20px;
-        margin: 16px 0;
-        background: rgba(0, 255, 0, 0.03);
-        box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
-    }
-    .source-ready::before {
-        content: "┌─ SYSTEM STATUS ──────────────────────────────";
-        display: block;
-        color: #00ff00;
-        margin-bottom: 8px;
-        font-size: 11px;
-    }
-    .source-ready::after {
-        content: "└──────────────────────────────────────────────";
-        display: block;
-        color: #00ff00;
-        margin-top: 8px;
-        font-size: 11px;
-    }
-    .source-ready-title {
-        color: #00ff00;
-        text-shadow: 0 0 8px #00ff00;
-        font-size: 15px;
-        letter-spacing: 1px;
-        font-weight: 700;
-    }
-    .source-ready-title::before { content: "✓ "; }
-    .source-ready-text {
-        color: #1a7a1a;
-        margin-top: 6px;
-        font-size: 12px;
-    }
-    .source-ready-text::before { content: "> "; color: #33ff33; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0a0e0a; }
+::-webkit-scrollbar-thumb { background: #1a7a1a; }
+::selection { background: #33ff33; color: #0a0e0a; }
+a { color: #00ffff !important; text-decoration: none !important; }
+</style>
+""", unsafe_allow_html=True)
 
 # ==========================================
-# STATE INITIALIZATION
+# STATE
 # ==========================================
 if "sources" not in st.session_state:
     st.session_state.sources = []
@@ -672,31 +447,19 @@ if "personality" not in st.session_state:
     st.session_state.personality = "Normal"
 
 # ==========================================
-# TERMINAL HEADER
+# HEADER (flush-left HTML!)
 # ==========================================
-st.markdown(
-    f"""
-    {ASCII_LOGO}
+st.markdown(ASCII_LOGO, unsafe_allow_html=True)
 
-    <div class="ascii-subtitle">&gt; S T U D Y &nbsp; M A D A D &lt;</div>
-    <div class="ascii-tagline">Your AI Study Assistant</div>
+st.markdown("""
+<div class="ascii-subtitle">&gt; S T U D Y &nbsp; M A D A D &lt;</div>
+<div class="ascii-tagline">Your AI Study Assistant</div>
+<div class="ascii-meta">MODEL: <b>mistral-small-2506</b></div>
+<div class="ascii-meta">DEV&nbsp; : <b>Aniket Sharma</b></div>
+<div class="ascii-meta"><a href="https://www.linkedin.com/in/aniket-sharma-42a700418" target="_blank">[LinkedIn]</a> &nbsp;·&nbsp; <a href="https://github.com/aniket-andyy" target="_blank">[GitHub]</a></div>
+""", unsafe_allow_html=True)
 
-    <div class="ascii-meta">MODEL: <b>mistral-small-2506</b></div>
-    <div class="ascii-meta">DEV&nbsp; : <b>Aniket Sharma</b></div>
-    <div class="ascii-meta">
-        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418" target="_blank">[LinkedIn]</a>
-        &nbsp;·&nbsp;
-        <a href="https://github.com/aniket-andyy" target="_blank">[GitHub]</a>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<pre style="color:#1a7a1a; text-align:center; margin-top:20px;">'
-    '════════════════════════════════════════════════════════════════════</pre>',
-    unsafe_allow_html=True
-)
+st.markdown('<pre class="ascii-hr">════════════════════════════════════════════════════════════</pre>', unsafe_allow_html=True)
 
 # ==========================================
 # UPLOAD SOURCES
@@ -727,7 +490,7 @@ total_sources = (
 
 st.caption(f"> {total_sources} source(s) queued")
 
-process_button = st.button("PROCESS_SOURCES", use_container_width=True, type="primary")
+process_button = st.button("[ PROCESS_SOURCES ]", use_container_width=True, type="primary")
 
 if process_button:
     if total_sources == 0:
@@ -747,12 +510,10 @@ if process_button:
                 extra = f'<div class="processing-fact">{html.escape(next_fact())}</div>'
 
             status.markdown(
-                f"""
-                <div class="processing">
-                    <div class="processing-main">{html.escape(main_text)}</div>
-                    {extra}
-                </div>
-                """,
+                '<div class="processing">'
+                f'<div class="processing-main">{html.escape(main_text)}</div>'
+                f'{extra}'
+                '</div>',
                 unsafe_allow_html=True
             )
 
@@ -830,12 +591,10 @@ if process_button:
 
 if st.session_state.source_ready:
     st.markdown(
-        """
-        <div class="source-ready">
-            <div class="source-ready-title">SOURCE READY</div>
-            <div class="source-ready-text">your study material is now available to SHAKAL.</div>
-        </div>
-        """,
+        '<div class="source-ready">'
+        '<div class="source-ready-title">SOURCE READY</div>'
+        '<div class="source-ready-text">your study material is now available to SHAKAL.</div>'
+        '</div>',
         unsafe_allow_html=True
     )
     num_sources = len(st.session_state.sources)
@@ -846,7 +605,7 @@ if st.session_state.source_ready:
                 st.markdown(f'<div class="source-chip">{html.escape(source)}</div>', unsafe_allow_html=True)
 
 # ==========================================
-# PERSONALITY SELECTION
+# PERSONALITY
 # ==========================================
 st.markdown('<div class="ascii-section">PERSONALITY_MODE</div>', unsafe_allow_html=True)
 st.markdown('<div class="ascii-subsection">choose how SHAKAL should teach you.</div>', unsafe_allow_html=True)
@@ -863,10 +622,7 @@ selected_personality = st.radio(
 
 st.session_state.personality = selected_personality
 
-st.markdown(
-    f'<div class="personality-info">&gt; active_mode: {st.session_state.personality}</div>',
-    unsafe_allow_html=True
-)
+st.markdown(f'<div class="personality-info">&gt; active_mode: {st.session_state.personality}</div>', unsafe_allow_html=True)
 
 # ==========================================
 # STUDY CHAT
@@ -875,7 +631,7 @@ st.markdown('<div class="ascii-section">STUDY_CHAT</div>', unsafe_allow_html=Tru
 
 reset_col, status_col = st.columns([1, 4])
 with reset_col:
-    if st.button("RESET_CHAT", use_container_width=True):
+    if st.button("[ RESET_CHAT ]", use_container_width=True):
         st.session_state.chat_history = []
         st.rerun()
 
@@ -886,7 +642,7 @@ for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
-query = st.chat_input("user@shakal:~$ ask anything about your studies...")
+query = st.chat_input("user@shakal:~$ ask anything...")
 
 PERSONALITY_PROMPTS = {
     "Normal": "You are SHAKAL, a balanced AI study assistant. Explain concepts clearly with examples, analogies, and step-by-step reasoning. Adapt to the question.",
@@ -904,27 +660,21 @@ if query:
     with st.chat_message("assistant"):
         processing = st.empty()
 
-        # Step 1: just the hello
         processing.markdown(
-            """
-            <div class="processing">
-                <div class="processing-main">INITIALIZING</div>
-                <div class="processing-message">aniket bhai ki taraf se hello! :)</div>
-            </div>
-            """,
+            '<div class="processing">'
+            '<div class="processing-main">INITIALIZING</div>'
+            '<div class="processing-message">aniket bhai ki taraf se hello! :)</div>'
+            '</div>',
             unsafe_allow_html=True
         )
         time.sleep(1.5)
 
-        # Step 2: add an AI fact
         processing.markdown(
-            f"""
-            <div class="processing">
-                <div class="processing-main">PROCESSING QUERY</div>
-                <div class="processing-message">aniket bhai ki taraf se hello! :)</div>
-                <div class="processing-fact">{html.escape(next_fact())}</div>
-            </div>
-            """,
+            '<div class="processing">'
+            '<div class="processing-main">PROCESSING QUERY</div>'
+            '<div class="processing-message">aniket bhai ki taraf se hello! :)</div>'
+            f'<div class="processing-fact">{html.escape(next_fact())}</div>'
+            '</div>',
             unsafe_allow_html=True
         )
 
@@ -958,9 +708,7 @@ if query:
             st.error(f"> SYSTEM ERROR: {error}")
 
 st.markdown(
-    '<pre style="color:#1a7a1a; text-align:center; margin-top:40px; font-size:11px;">'
-    '════════════════════════════════════════════════════════════════════<br>'
-    '> EOF &nbsp;|&nbsp; connection terminated &nbsp;|&nbsp; SHAKAL v1.0<br>'
-    '════════════════════════════════════════════════════════════════════</pre>',
+    '<pre class="ascii-hr">════════════════════════════════════════════════════════════</pre>'
+    '<div class="personality-info">&gt; EOF &nbsp;|&nbsp; connection terminated &nbsp;|&nbsp; SHAKAL v1.0</div>',
     unsafe_allow_html=True
-    )
+            )
