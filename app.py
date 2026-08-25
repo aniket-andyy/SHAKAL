@@ -20,46 +20,43 @@ from langchain_core.prompts import ChatPromptTemplate
 st.set_page_config(
     page_title="SHAKAL - STUDY MADAD",
     page_icon="🧠",
-    layout="centered"
+    layout="wide"
 )
-
 
 st.markdown(
     """
     <style>
-    #MainMenu,
-    footer,
-    header {
+    #MainMenu, footer, header {
         visibility: hidden;
     }
 
     .block-container {
-        max-width: 900px;
-        padding-top: 35px;
-        padding-bottom: 80px;
+        max-width: 1000px;
+        padding-top: 3rem;
+        padding-bottom: 4rem;
     }
 
     .brand {
         text-align: center;
-        font-size: 52px;
+        font-size: 56px;
         font-weight: 900;
-        letter-spacing: 7px;
+        letter-spacing: 8px;
         line-height: 1;
     }
 
     .subtitle {
         text-align: center;
-        font-size: 17px;
+        font-size: 20px;
         font-weight: 600;
-        letter-spacing: 6px;
-        opacity: 0.55;
-        margin-top: 10px;
+        letter-spacing: 7px;
+        opacity: 0.65;
+        margin-top: 8px;
     }
 
     .tagline {
         text-align: center;
         font-size: 15px;
-        opacity: 0.55;
+        opacity: 0.6;
         margin-top: 20px;
     }
 
@@ -74,56 +71,47 @@ st.markdown(
         text-align: center;
         font-size: 13px;
         opacity: 0.55;
-        margin-top: 15px;
-        line-height: 1.6;
+        margin-top: 14px;
     }
 
     .developer a {
         text-decoration: none;
     }
 
-    .section {
-        margin-top: 45px;
-    }
-
     .section-title {
-        font-size: 22px;
+        font-size: 23px;
         font-weight: 750;
+        margin-top: 45px;
         margin-bottom: 5px;
     }
 
-    .section-description {
+    .section-subtitle {
         font-size: 14px;
         opacity: 0.55;
         margin-bottom: 20px;
     }
 
     .source-note {
-        font-size: 12px;
-        opacity: 0.5;
-        margin-top: 8px;
-        margin-bottom: 18px;
-    }
-
-    .source-item {
-        border: 1px solid rgba(255,255,255,0.10);
+        padding: 12px 16px;
         border-radius: 10px;
-        padding: 12px 15px;
-        margin-bottom: 8px;
-        font-size: 14px;
+        border: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.025);
+        font-size: 13px;
+        opacity: 0.7;
+        margin-bottom: 18px;
     }
 
     .processing {
         text-align: center;
-        padding: 15px;
+        padding: 18px;
+        border-radius: 12px;
         border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 10px;
         margin: 15px 0;
     }
 
     .processing-main {
-        font-size: 15px;
         font-weight: 700;
+        font-size: 16px;
     }
 
     .processing-message {
@@ -132,18 +120,29 @@ st.markdown(
         margin-top: 4px;
     }
 
-    .ready {
-        margin-top: 15px;
-        padding: 12px 15px;
+    .source-ready {
+        padding: 14px 17px;
         border-radius: 10px;
         border: 1px solid rgba(255,255,255,0.10);
+        margin-top: 15px;
+    }
+
+    .source-ready-title {
+        font-weight: 700;
         font-size: 13px;
     }
 
-    .personality-description {
+    .source-ready-text {
+        font-size: 12px;
+        opacity: 0.55;
+        margin-top: 4px;
+    }
+
+    .personality-info {
+        text-align: center;
         font-size: 13px;
         opacity: 0.5;
-        margin-top: 8px;
+        margin-top: 10px;
     }
     </style>
     """,
@@ -162,73 +161,6 @@ if "chat_history" not in st.session_state:
 
 if "personality" not in st.session_state:
     st.session_state.personality = "Normal"
-
-
-PERSONALITIES = {
-    "Normal": """You are SHAKAL, a balanced AI study assistant.
-
-Help students and learners understand subjects clearly.
-
-Explain concepts accurately and at an appropriate level of detail.
-Use examples, analogies, step-by-step explanations, and concise
-summaries when useful.
-
-Adapt your teaching style to the user's question.
-Do not unnecessarily overcomplicate simple questions.""",
-
-    "Theorist": """You are SHAKAL in Theorist personality.
-
-Focus on the underlying theory and conceptual foundations.
-
-Explain definitions, principles, relationships between concepts,
-assumptions, mathematical reasoning, cause and effect, and why
-something works.
-
-Prefer deep conceptual understanding over quick answers.
-
-When appropriate, connect the current concept with related
-theories and fundamentals.""",
-
-    "Practicalist": """You are SHAKAL in Practicalist personality.
-
-Focus on how knowledge is used in the real world.
-
-Explain practical applications, implementation, real-world examples,
-workflows, demonstrations, use cases, and common mistakes.
-
-Whenever useful, convert theory into something the learner can
-actually do or implement.""",
-
-    "Examiner": """You are SHAKAL in Examiner personality.
-
-Act like a strict but helpful academic examiner.
-
-Focus on important concepts, likely exam questions, conceptual gaps,
-mistakes, problem-solving, and evaluation of answers.
-
-When the user provides an answer, evaluate it, identify mistakes,
-explain why they are mistakes, and show how to improve.
-
-Do not praise unnecessarily. Focus on useful feedback.""",
-
-    "Guide": """You are SHAKAL in Guide personality.
-
-Act as a supportive study guide who helps the learner move from
-confusion to understanding.
-
-Break difficult subjects into manageable steps.
-
-Help the student decide what to learn first, what to practice next,
-what to revise, and how to approach difficult problems.
-
-Ask useful guiding questions when appropriate.
-
-Give clear study direction without doing all the thinking for the
-student.
-
-The goal is to help the learner become more independent and
-confident in studying."""
-}
 
 
 st.markdown(
@@ -261,356 +193,211 @@ st.markdown(
 )
 
 
-# ============================================================
-# SOURCES
-# ============================================================
-
-st.markdown(
-    '<div class="section">',
-    unsafe_allow_html=True
-)
-
 st.markdown(
     '<div class="section-title">Upload Your Sources</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="section-description">'
-    'Give SHAKAL your study material and start learning.'
+    '<div class="section-subtitle">'
+    'Give SHAKAL your study material.'
     '</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    f'<div class="source-note">'
-    f'You can add up to 3 sources at a time · '
-    f'{len(st.session_state.sources)}/3 sources added'
+    '<div class="source-note">'
+    'You can add up to <b>3 sources</b> at a time.'
     '</div>',
     unsafe_allow_html=True
 )
 
 
-# ------------------------------------------------------------
-# PDF
-# ------------------------------------------------------------
-
-pdf_file = st.file_uploader(
-    "📄 PDF",
-    type=["pdf"],
-    accept_multiple_files=False
+source_type = st.radio(
+    "Source type",
+    [
+        "📄 PDF",
+        "🌐 Website",
+        "🎥 YouTube",
+        "🖼️ Image"
+    ],
+    horizontal=True,
+    label_visibility="collapsed"
 )
 
-if pdf_file:
 
-    if not any(
-        source["id"] == f"pdf_{pdf_file.name}"
-        for source in st.session_state.sources
-    ):
-
-        if len(st.session_state.sources) < 3:
-
-            st.session_state.sources.append(
-                {
-                    "id": f"pdf_{pdf_file.name}",
-                    "type": "pdf",
-                    "name": pdf_file.name,
-                    "file": pdf_file,
-                    "url": None
-                }
-            )
-
-        else:
-
-            st.warning(
-                "Maximum 3 sources allowed."
-            )
+pdf_files = []
+website_urls = []
+youtube_urls = []
+image_files = []
 
 
-# ------------------------------------------------------------
-# WEBSITE
-# ------------------------------------------------------------
+if source_type == "📄 PDF":
 
-website_url = st.text_input(
-    "🌐 Website",
-    placeholder="Paste website URL"
-)
-
-if st.button(
-    "Add Website",
-    use_container_width=True
-):
-
-    if not website_url.strip():
-
-        st.warning(
-            "Enter a website URL first."
-        )
-
-    elif len(st.session_state.sources) >= 3:
-
-        st.warning(
-            "Maximum 3 sources allowed."
-        )
-
-    else:
-
-        st.session_state.sources.append(
-            {
-                "id": f"web_{website_url.strip()}",
-                "type": "web",
-                "name": website_url.strip(),
-                "file": None,
-                "url": website_url.strip()
-            }
-        )
-
-        st.rerun()
-
-
-# ------------------------------------------------------------
-# YOUTUBE
-# ------------------------------------------------------------
-
-youtube_url = st.text_input(
-    "🎥 YouTube Video",
-    placeholder="Paste YouTube video URL"
-)
-
-if st.button(
-    "Add YouTube",
-    use_container_width=True
-):
-
-    if not youtube_url.strip():
-
-        st.warning(
-            "Enter a YouTube URL first."
-        )
-
-    elif len(st.session_state.sources) >= 3:
-
-        st.warning(
-            "Maximum 3 sources allowed."
-        )
-
-    else:
-
-        st.session_state.sources.append(
-            {
-                "id": f"yt_{youtube_url.strip()}",
-                "type": "youtube",
-                "name": youtube_url.strip(),
-                "file": None,
-                "url": youtube_url.strip()
-            }
-        )
-
-        st.rerun()
-
-
-# ------------------------------------------------------------
-# IMAGE
-# ------------------------------------------------------------
-
-image_file = st.file_uploader(
-    "🖼️ Image",
-    type=["png", "jpg", "jpeg", "webp"],
-    accept_multiple_files=False
-)
-
-if image_file:
-
-    if not any(
-        source["id"] == f"image_{image_file.name}"
-        for source in st.session_state.sources
-    ):
-
-        if len(st.session_state.sources) < 3:
-
-            st.session_state.sources.append(
-                {
-                    "id": f"image_{image_file.name}",
-                    "type": "image",
-                    "name": image_file.name,
-                    "file": image_file,
-                    "url": None
-                }
-            )
-
-        else:
-
-            st.warning(
-                "Maximum 3 sources allowed."
-            )
-
-
-# ============================================================
-# SELECTED SOURCES
-# ============================================================
-
-if st.session_state.sources:
-
-    st.markdown(
-        '<div class="section-title">Selected Sources</div>',
-        unsafe_allow_html=True
+    pdf_files = st.file_uploader(
+        "Upload PDF",
+        type=["pdf"],
+        accept_multiple_files=True
     )
 
-    for index, source in enumerate(
-        st.session_state.sources
-    ):
+elif source_type == "🌐 Website":
 
-        col1, col2 = st.columns(
-            [9, 1]
-        )
+    website_text = st.text_area(
+        "Website URLs",
+        placeholder="Paste one URL per line..."
+    )
 
-        with col1:
+    website_urls = [
+        x.strip()
+        for x in website_text.splitlines()
+        if x.strip()
+    ]
 
-            icons = {
-                "pdf": "📄",
-                "web": "🌐",
-                "youtube": "🎥",
-                "image": "🖼️"
-            }
+elif source_type == "🎥 YouTube":
 
-            st.markdown(
-                f"""
-                <div class="source-item">
-                    {icons[source["type"]]}&nbsp;&nbsp;
-                    {source["name"]}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+    youtube_text = st.text_area(
+        "YouTube URLs",
+        placeholder="Paste one YouTube URL per line..."
+    )
 
-        with col2:
+    youtube_urls = [
+        x.strip()
+        for x in youtube_text.splitlines()
+        if x.strip()
+    ]
 
-            if st.button(
-                "×",
-                key=f"remove_{source['id']}"
-            ):
+else:
 
-                st.session_state.sources.pop(
-                    index
-                )
-
-                st.session_state.source_ready = False
-
-                st.rerun()
+    image_files = st.file_uploader(
+        "Upload images",
+        type=["png", "jpg", "jpeg", "webp"],
+        accept_multiple_files=True
+    )
 
 
-# ============================================================
-# PROCESS
-# ============================================================
+total_sources = (
+    len(pdf_files or [])
+    + len(website_urls)
+    + len(youtube_urls)
+    + len(image_files or [])
+)
 
-if st.session_state.sources:
 
-    if st.button(
-        "⚡ Process Sources",
-        use_container_width=True,
-        type="primary"
-    ):
+st.caption(f"{total_sources}/3 sources selected")
+
+
+process_button = st.button(
+    "Process Sources",
+    use_container_width=True,
+    type="primary"
+)
+
+
+if process_button:
+
+    if total_sources == 0:
+
+        st.warning("Please add at least one source.")
+
+    elif total_sources > 3:
+
+        st.error("Maximum 3 sources can be processed at a time.")
+
+    else:
 
         all_docs = []
+        source_names = []
 
-        progress = st.progress(
-            0
-        )
-
+        progress = st.progress(0)
         status = st.empty()
 
         try:
 
-            total = len(
-                st.session_state.sources
-            )
+            current = 0
 
-            for index, source in enumerate(
-                st.session_state.sources,
-                start=1
-            ):
+            if pdf_files:
 
-                status.info(
-                    f"Processing source {index}/{total}..."
-                )
+                for file in pdf_files:
 
-                if source["type"] == "pdf":
+                    status.info(
+                        f"Processing {file.name}..."
+                    )
 
                     with tempfile.NamedTemporaryFile(
                         delete=False,
                         suffix=".pdf"
                     ) as temp:
 
-                        temp.write(
-                            source["file"].getbuffer()
-                        )
-
+                        temp.write(file.getbuffer())
                         temp_path = temp.name
 
                     try:
 
-                        docs = load_pdf(
-                            temp_path
-                        )
+                        docs = load_pdf(temp_path)
 
                         for doc in docs:
+                            doc.metadata["source_type"] = "pdf"
+                            doc.metadata["source"] = file.name
 
-                            doc.metadata[
-                                "source_type"
-                            ] = "pdf"
-
-                            doc.metadata[
-                                "source"
-                            ] = source["name"]
-
-                        all_docs.extend(
-                            docs
+                        all_docs.extend(docs)
+                        source_names.append(
+                            f"📄 {file.name}"
                         )
 
                     finally:
 
-                        if os.path.exists(
-                            temp_path
-                        ):
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
 
-                            os.remove(
-                                temp_path
-                            )
+                    current += 1
+                    progress.progress(current / total_sources)
 
-                elif source["type"] == "web":
+            for url in website_urls:
 
-                    docs = load_webpage(
-                        source["url"]
+                status.info(
+                    f"Processing website..."
+                )
+
+                docs = load_webpage(url)
+
+                for doc in docs:
+                    doc.metadata["source_type"] = "webpage"
+                    doc.metadata["source"] = url
+
+                all_docs.extend(docs)
+                source_names.append(
+                    f"🌐 {url}"
+                )
+
+                current += 1
+                progress.progress(current / total_sources)
+
+            for url in youtube_urls:
+
+                status.info(
+                    "Processing YouTube transcript..."
+                )
+
+                docs = load_youtube(url)
+
+                all_docs.extend(docs)
+                source_names.append(
+                    f"🎥 YouTube"
+                )
+
+                current += 1
+                progress.progress(current / total_sources)
+
+            if image_files:
+
+                for file in image_files:
+
+                    status.info(
+                        f"Processing {file.name}..."
                     )
-
-                    for doc in docs:
-
-                        doc.metadata[
-                            "source_type"
-                        ] = "webpage"
-
-                        doc.metadata[
-                            "source"
-                        ] = source["url"]
-
-                    all_docs.extend(
-                        docs
-                    )
-
-                elif source["type"] == "youtube":
-
-                    docs = load_youtube(
-                        source["url"]
-                    )
-
-                    all_docs.extend(
-                        docs
-                    )
-
-                elif source["type"] == "image":
 
                     extension = os.path.splitext(
-                        source["file"].name
+                        file.name
                     )[1]
 
                     with tempfile.NamedTemporaryFile(
@@ -618,62 +405,43 @@ if st.session_state.sources:
                         suffix=extension
                     ) as temp:
 
-                        temp.write(
-                            source["file"].getbuffer()
-                        )
-
+                        temp.write(file.getbuffer())
                         temp_path = temp.name
 
                     try:
 
-                        docs = load_image(
-                            temp_path
-                        )
+                        docs = load_image(temp_path)
 
                         for doc in docs:
+                            doc.metadata["source_type"] = "image"
+                            doc.metadata["source"] = file.name
 
-                            doc.metadata[
-                                "source_type"
-                            ] = "image"
-
-                            doc.metadata[
-                                "source"
-                            ] = source["name"]
-
-                        all_docs.extend(
-                            docs
+                        all_docs.extend(docs)
+                        source_names.append(
+                            f"🖼️ {file.name}"
                         )
 
                     finally:
 
-                        if os.path.exists(
-                            temp_path
-                        ):
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
 
-                            os.remove(
-                                temp_path
-                            )
-
-                progress.progress(
-                    index / total
-                )
+                    current += 1
+                    progress.progress(current / total_sources)
 
             status.info(
                 "Creating embeddings and updating knowledge base..."
             )
 
-            add_to_chroma(
-                all_docs
-            )
+            add_to_chroma(all_docs)
 
-            progress.progress(
-                1.0
-            )
+            progress.progress(1.0)
 
             status.success(
-                "Sources are ready."
+                "Sources ready."
             )
 
+            st.session_state.sources = source_names
             st.session_state.source_ready = True
 
         except Exception:
@@ -681,7 +449,7 @@ if st.session_state.sources:
             status.empty()
 
             st.error(
-                "Unable to process the selected sources."
+                "Unable to process the selected source."
             )
 
 
@@ -689,26 +457,21 @@ if st.session_state.source_ready:
 
     st.markdown(
         """
-        <div class="ready">
-            ✓ SOURCE READY
-            <br>
-            <span style="opacity:0.5;">
+        <div class="source-ready">
+            <div class="source-ready-title">
+                ✓ SOURCE READY
+            </div>
+            <div class="source-ready-text">
                 Your study material is available to SHAKAL.
-            </span>
+            </div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
+    for source in st.session_state.sources:
+        st.caption(source)
 
-# ============================================================
-# PERSONALITY
-# ============================================================
-
-st.markdown(
-    '<div class="section">',
-    unsafe_allow_html=True
-)
 
 st.markdown(
     '<div class="section-title">Personality</div>',
@@ -716,58 +479,80 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="section-description">'
+    '<div class="section-subtitle">'
     'Choose how SHAKAL should teach you.'
     '</div>',
     unsafe_allow_html=True
 )
 
 
-personality = st.selectbox(
-    "SHAKAL Personality",
-    [
-        "Normal",
-        "Theorist",
-        "Practicalist",
-        "Examiner",
-        "Guide"
-    ],
-    index=0
-)
+personality_columns = st.columns(5)
 
-st.session_state.personality = personality
+personalities = [
+    "Normal",
+    "Theorist",
+    "Practicalist",
+    "Examiner",
+    "Guide"
+]
 
 
-descriptions = {
-    "Normal": "Balanced explanations for everyday studying.",
-    "Theorist": "Deep focus on theory, concepts and fundamentals.",
-    "Practicalist": "Focus on real-world applications and implementation.",
-    "Examiner": "Strict academic evaluation and exam-focused learning.",
-    "Guide": "Step-by-step guidance toward independent learning."
-}
+for column, personality in zip(
+    personality_columns,
+    personalities
+):
+
+    with column:
+
+        if st.button(
+            personality,
+            use_container_width=True,
+            type=(
+                "primary"
+                if st.session_state.personality == personality
+                else "secondary"
+            ),
+            key=f"personality_{personality}"
+        ):
+
+            st.session_state.personality = personality
+            st.rerun()
 
 
 st.markdown(
-    f'<div class="personality-description">'
-    f'{descriptions[personality]}'
-    f'</div>',
+    f"""
+    <div class="personality-info">
+        Active personality · {st.session_state.personality}
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
-
-# ============================================================
-# CHAT
-# ============================================================
-
-st.markdown(
-    '<div class="section">',
-    unsafe_allow_html=True
-)
 
 st.markdown(
     '<div class="section-title">Study Chat</div>',
     unsafe_allow_html=True
 )
+
+
+reset_col, status_col = st.columns([1, 4])
+
+with reset_col:
+
+    if st.button(
+        "Reset Chat",
+        use_container_width=True
+    ):
+
+        st.session_state.chat_history = []
+        st.rerun()
+
+
+with status_col:
+
+    st.caption(
+        f"Personality: {st.session_state.personality}"
+    )
 
 
 for message in st.session_state.chat_history:
@@ -786,6 +571,77 @@ query = st.chat_input(
 )
 
 
+PERSONALITY_PROMPTS = {
+
+    "Normal": """
+You are SHAKAL, a balanced AI study assistant.
+
+Help students and learners understand subjects clearly.
+
+Explain concepts accurately and at an appropriate level of detail.
+Use examples, analogies, step-by-step explanations, and concise
+summaries when useful.
+
+Adapt your teaching style to the user's question.
+Do not unnecessarily overcomplicate simple questions.
+""",
+
+    "Theorist": """
+You are SHAKAL in Theorist personality.
+
+Focus on underlying theory and conceptual foundations.
+
+Explain definitions, principles, relationships between concepts,
+assumptions, mathematical reasoning, cause and effect, and why
+something works.
+
+Prefer deep conceptual understanding over quick answers.
+""",
+
+    "Practicalist": """
+You are SHAKAL in Practicalist personality.
+
+Focus on how knowledge is used in the real world.
+
+Explain practical applications, implementation, real-world examples,
+workflows, demonstrations, use cases, and common mistakes.
+
+Whenever useful, convert theory into something the learner can
+actually do or implement.
+""",
+
+    "Examiner": """
+You are SHAKAL in Examiner personality.
+
+Act like a strict but helpful academic examiner.
+
+Focus on important concepts, likely exam questions, conceptual gaps,
+mistakes, problem-solving, and evaluation.
+
+When the user provides an answer, evaluate it, identify mistakes,
+explain why they are mistakes, and show how to improve.
+
+Do not praise unnecessarily. Focus on useful feedback.
+""",
+
+    "Guide": """
+You are SHAKAL in Guide personality.
+
+Act as a study mentor who guides the learner through a topic.
+
+Help the student decide what to learn first, what to learn next,
+what to practice, and how to improve.
+
+Break difficult topics into manageable steps.
+Ask guiding questions when useful.
+Identify knowledge gaps and suggest the next logical learning step.
+
+Your goal is to help the student become capable of solving problems
+independently rather than simply giving answers.
+"""
+}
+
+
 if query:
 
     st.session_state.chat_history.append(
@@ -795,17 +651,10 @@ if query:
         }
     )
 
-    with st.chat_message(
-        "user"
-    ):
+    with st.chat_message("user"):
+        st.write(query)
 
-        st.write(
-            query
-        )
-
-    with st.chat_message(
-        "assistant"
-    ):
+    with st.chat_message("assistant"):
 
         processing = st.empty()
 
@@ -829,29 +678,30 @@ if query:
                 model="mistral-small-2506"
             )
 
-            personality_prompt = PERSONALITIES[
+            personality_prompt = PERSONALITY_PROMPTS[
                 st.session_state.personality
             ]
 
             if not st.session_state.source_ready:
 
+                system_prompt = f"""
+{personality_prompt}
+
+You are helping a student using your general knowledge.
+
+Explain difficult concepts clearly and step-by-step.
+Use examples, analogies, and practical explanations when useful.
+"""
+
                 prompt = ChatPromptTemplate.from_messages(
                     [
-                        (
-                            "system",
-                            personality_prompt
-                        ),
-                        (
-                            "human",
-                            "{question}"
-                        )
+                        ("system", system_prompt),
+                        ("human", "{question}")
                     ]
                 )
 
                 final_prompt = prompt.invoke(
-                    {
-                        "question": query
-                    }
+                    {"question": query}
                 )
 
             else:
@@ -874,9 +724,7 @@ if query:
                     }
                 )
 
-                docs = retriever.invoke(
-                    query
-                )
+                docs = retriever.invoke(query)
 
                 context = "\n\n".join(
                     doc.page_content
@@ -886,37 +734,33 @@ if query:
                 system_prompt = f"""
 {personality_prompt}
 
-You are SHAKAL, a study AI assistant.
+You are answering using the student's provided study sources.
 
-The user's uploaded study sources are the PRIMARY source
-for answering questions.
+Use the provided source as the PRIMARY source.
 
-Use the provided source whenever relevant.
+You may use your general knowledge when the source does not contain
+enough information.
 
-You may use general knowledge when the source does not
-contain enough information.
-
-If you use general knowledge, clearly indicate that it is
+If you use general knowledge, clearly state that the information is
 not directly present in the provided source.
 
-Never invent information.
+Help the student understand the topic accurately and clearly.
 """
 
                 prompt = ChatPromptTemplate.from_messages(
                     [
-                        (
-                            "system",
-                            system_prompt
-                        ),
+                        ("system", system_prompt),
                         (
                             "human",
-                            """Study Source:
+                            """
+Study Source Context:
 
 {context}
 
 Student Question:
 
-{question}"""
+{question}
+"""
                         )
                     ]
                 )
@@ -936,9 +780,7 @@ Student Question:
 
             processing.empty()
 
-            st.write(
-                answer
-            )
+            st.write(answer)
 
             st.session_state.chat_history.append(
                 {
@@ -952,5 +794,5 @@ Student Question:
             processing.empty()
 
             st.error(
-                "Sorry, SHAKAL could not process your request."
-                    )
+                "Sorry, something went wrong while processing your request."
+            )
