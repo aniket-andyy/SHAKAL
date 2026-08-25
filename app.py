@@ -704,6 +704,6 @@ if query:
             st.write(answer)
             st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
-        except Exception:
-            processing.empty()
-            st.error("Sorry, something went wrong while processing your request.")
+        except Exception as error:
+            status.empty()
+            st.error(f"Unable to process the selected source.\n\n🔍 Debug: {error}")
