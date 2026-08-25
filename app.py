@@ -20,9 +20,127 @@ from langchain_core.prompts import ChatPromptTemplate
 st.set_page_config(
     page_title="SHAKAL - STUDY MADAD",
     page_icon="🧠",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="centered"
 )
+
+
+if "MISTRAL_API_KEY" in st.secrets:
+    os.environ["MISTRAL_API_KEY"] = st.secrets["MISTRAL_API_KEY"]
+
+if "mode" not in st.session_state:
+    st.session_state.mode = "Source + AI"
+
+if "personality" not in st.session_state:
+    st.session_state.personality = "Normal"
+
+if "sources" not in st.session_state:
+    st.session_state.sources = []
+
+if "source_ready" not in st.session_state:
+    st.session_state.source_ready = False
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+
+PERSONALITIES = {
+    "Normal": """
+You are SHAKAL, a balanced AI study assistant.
+
+Help students and learners understand subjects clearly.
+
+Explain concepts accurately and at an appropriate level of
+detail. Use examples, analogies, step-by-step explanations,
+and concise summaries when useful.
+
+Adapt your teaching style to the user's question.
+Do not unnecessarily overcomplicate simple questions.
+""",
+
+    "Theorist": """
+You are SHAKAL in Theorist personality.
+
+Focus on the underlying theory and conceptual foundations.
+
+Explain:
+- definitions
+- principles
+- relationships between concepts
+- assumptions
+- mathematical reasoning
+- cause and effect
+- why something works
+
+Prefer deep conceptual understanding over quick answers.
+
+When appropriate, connect the current concept with related
+theories and fundamentals.
+""",
+
+    "Practicalist": """
+You are SHAKAL in Practicalist personality.
+
+Focus on how knowledge is used in the real world.
+
+Explain:
+- practical applications
+- implementation
+- real-world examples
+- workflows
+- demonstrations
+- use cases
+- common mistakes
+
+Whenever useful, convert theory into something the learner
+can actually do or implement.
+""",
+
+    "Examiner": """
+You are SHAKAL in Examiner personality.
+
+Act like a strict but helpful academic examiner.
+
+Focus on:
+- important concepts
+- likely exam questions
+- conceptual gaps
+- mistakes
+- problem-solving
+- evaluation of answers
+
+When the user provides an answer, evaluate it, identify
+mistakes, explain why they are mistakes, and show how to
+improve.
+
+Do not praise unnecessarily. Focus on useful feedback.
+""",
+
+    "Guide": """
+You are SHAKAL in Guide personality.
+
+Act as a personal study guide who helps the learner move
+from confusion to understanding step by step.
+
+Identify what the student already understands and what
+they need to learn next.
+
+Break difficult topics into manageable steps.
+
+When useful:
+- create a learning path
+- suggest what to study next
+- explain prerequisites
+- provide practice tasks
+- ask useful guiding questions
+- help the student revise
+- connect related concepts
+
+Do not overwhelm the student with unnecessary information.
+
+Your goal is to guide the learner toward independent
+understanding rather than simply giving answers.
+"""
+}
 
 
 st.markdown(
@@ -42,127 +160,108 @@ st.markdown(
     }
 
     .block-container {
-        max-width: 1100px;
-        padding-top: 3rem;
-        padding-bottom: 4rem;
+        max-width: 950px;
+        padding-top: 2rem;
+        padding-bottom: 5rem;
+    }
+
+    .hero {
+        text-align: center;
+        padding: 35px 10px 25px 10px;
     }
 
     .brand {
-        text-align: center;
-        font-size: 58px;
+        font-size: 54px;
         font-weight: 900;
-        letter-spacing: 7px;
-        margin-bottom: -5px;
+        letter-spacing: 8px;
+        line-height: 1;
     }
 
     .subtitle {
-        text-align: center;
-        font-size: 22px;
-        letter-spacing: 8px;
+        margin-top: 10px;
+        font-size: 18px;
         font-weight: 600;
-        opacity: 0.75;
-    }
-
-    .tagline {
-        text-align: center;
-        font-size: 16px;
-        margin-top: 15px;
-        opacity: 0.65;
-    }
-
-    .model {
-        text-align: center;
-        font-size: 14px;
-        margin-top: 8px;
+        letter-spacing: 7px;
         opacity: 0.55;
     }
 
-    .developer {
-        text-align: center;
-        font-size: 13px;
-        margin-top: 12px;
+    .tagline {
+        margin-top: 18px;
+        font-size: 15px;
         opacity: 0.6;
+    }
+
+    .model {
+        margin-top: 8px;
+        font-size: 12px;
+        opacity: 0.45;
+    }
+
+    .developer {
+        margin-top: 14px;
+        font-size: 12px;
+        opacity: 0.5;
     }
 
     .developer a {
         text-decoration: none;
     }
 
+    .section {
+        margin-top: 35px;
+    }
+
     .section-title {
-        font-size: 26px;
-        font-weight: 700;
-        margin-top: 45px;
-        margin-bottom: 5px;
+        font-size: 21px;
+        font-weight: 750;
+        margin-bottom: 4px;
     }
 
     .section-subtitle {
-        opacity: 0.6;
-        margin-bottom: 25px;
-    }
-
-    .source-card {
-        padding: 22px;
-        border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 14px;
-        background: rgba(255,255,255,0.025);
-        margin-bottom: 15px;
-    }
-
-    .source-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .source-description {
         font-size: 13px;
-        opacity: 0.55;
-        margin-bottom: 15px;
+        opacity: 0.5;
+        margin-bottom: 18px;
     }
 
-    .mode-card {
-        padding: 20px;
+    .source-limit {
+        text-align: right;
+        font-size: 12px;
+        opacity: 0.45;
+        margin-bottom: 8px;
+    }
+
+    .source-ready {
+        padding: 14px 16px;
         border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 15px;
+        border-radius: 12px;
+        margin-top: 12px;
         background: rgba(255,255,255,0.025);
-        margin-top: 25px;
     }
 
     .processing {
         text-align: center;
-        padding: 25px;
-        border-radius: 15px;
-        border: 1px solid rgba(255,255,255,0.10);
-        margin: 20px 0;
+        padding: 18px;
+        margin: 12px 0;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
     }
 
-    .processing-main {
-        font-size: 18px;
+    .processing-title {
         font-weight: 700;
+        font-size: 15px;
     }
 
-    .processing-message {
-        font-size: 13px;
-        opacity: 0.55;
+    .processing-text {
+        font-size: 12px;
+        opacity: 0.45;
         margin-top: 5px;
     }
 
-    .source-ready {
-        padding: 15px 20px;
+    .personality-card {
+        padding: 16px;
         border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.12);
-        margin-top: 15px;
-    }
-
-    .source-ready-title {
-        font-weight: 700;
-        font-size: 14px;
-    }
-
-    .source-ready-text {
-        font-size: 13px;
-        opacity: 0.65;
-        margin-top: 4px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.025);
     }
 
     </style>
@@ -171,48 +270,31 @@ st.markdown(
 )
 
 
-if "mode" not in st.session_state:
-    st.session_state.mode = "Source + LLM/AI"
-
-if "source_ready" not in st.session_state:
-    st.session_state.source_ready = False
-
-if "sources" not in st.session_state:
-    st.session_state.sources = []
-
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-if "processed_source_count" not in st.session_state:
-    st.session_state.processed_source_count = 0
-
-
 st.markdown(
     """
-    <div class="brand">SHAKAL</div>
+    <div class="hero">
+        <div class="brand">SHAKAL</div>
+        <div class="subtitle">STUDY MADAD</div>
 
-    <div class="subtitle">STUDY MADAD</div>
+        <div class="tagline">
+            Your AI Study Assistant
+        </div>
 
-    <div class="tagline">
-        Your AI Study Assistant
-    </div>
+        <div class="model">
+            Model · Mistral Small 2506
+        </div>
 
-    <div class="model">
-        Model · Mistral Small 2506
-    </div>
-
-    <div class="developer">
-        Developed by Aniket Sharma
-        <br><br>
-        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android"
-           target="_blank">
-            LinkedIn
-        </a>
-        &nbsp;&nbsp;|&nbsp;&nbsp;
-        <a href="https://github.com/aniket-andyy"
-           target="_blank">
-            GitHub
-        </a>
+        <div class="developer">
+            Developed by Aniket Sharma
+            <br><br>
+            <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">
+                LinkedIn
+            </a>
+            &nbsp;&nbsp;·&nbsp;&nbsp;
+            <a href="https://github.com/aniket-andyy" target="_blank">
+                GitHub
+            </a>
+        </div>
     </div>
     """,
     unsafe_allow_html=True
@@ -220,326 +302,346 @@ st.markdown(
 
 
 st.markdown(
-    '<div class="section-title">Upload Your Sources</div>',
+    '<div class="section-title">Your Sources</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-subtitle">'
-    'Give SHAKAL your study material and start learning.'
+    'Add study material for SHAKAL to learn from.'
     '</div>',
     unsafe_allow_html=True
 )
 
-
-pdf_files = st.file_uploader(
-    "📄 PDF",
-    type=["pdf"],
-    accept_multiple_files=True,
-    help="Upload one or more PDF files."
+st.markdown(
+    '<div class="source-limit">Maximum 3 sources at a time</div>',
+    unsafe_allow_html=True
 )
 
 
-website_urls = st.text_area(
-    "🌐 Website Links",
-    placeholder="Paste website URLs, one per line...",
-    help="You can add multiple website URLs."
+source_type = st.selectbox(
+    "Source type",
+    [
+        "📄 PDF",
+        "🌐 Website",
+        "🎥 YouTube",
+        "🖼️ Image"
+    ],
+    label_visibility="collapsed"
 )
 
 
-youtube_urls = st.text_area(
-    "🎥 YouTube Video Links",
-    placeholder="Paste YouTube URLs, one per line...",
-    help="You can add multiple YouTube URLs."
+selected_file = None
+selected_url = None
+
+
+if source_type == "📄 PDF":
+
+    selected_file = st.file_uploader(
+        "Upload PDF",
+        type=["pdf"],
+        accept_multiple_files=False
+    )
+
+
+elif source_type == "🌐 Website":
+
+    selected_url = st.text_input(
+        "Website URL",
+        placeholder="https://example.com"
+    )
+
+
+elif source_type == "🎥 YouTube":
+
+    selected_url = st.text_input(
+        "YouTube URL",
+        placeholder="https://youtube.com/watch?v=..."
+    )
+
+
+elif source_type == "🖼️ Image":
+
+    selected_file = st.file_uploader(
+        "Upload image",
+        type=["png", "jpg", "jpeg", "webp"],
+        accept_multiple_files=False
+    )
+
+
+add_source = st.button(
+    "＋ Add Source",
+    use_container_width=True
 )
 
 
-image_files = st.file_uploader(
-    "🖼️ Images",
-    type=["png", "jpg", "jpeg", "webp"],
-    accept_multiple_files=True,
-    help="Upload one or more images."
-)
+if add_source:
 
+    if len(st.session_state.sources) >= 3:
 
-website_list = [
-    url.strip()
-    for url in website_urls.splitlines()
-    if url.strip()
-]
+        st.error(
+            "Maximum 3 sources allowed at a time."
+        )
 
-
-youtube_list = [
-    url.strip()
-    for url in youtube_urls.splitlines()
-    if url.strip()
-]
-
-
-total_sources = (
-    len(pdf_files or [])
-    + len(website_list)
-    + len(youtube_list)
-    + len(image_files or [])
-)
-
-
-st.caption(
-    f"{total_sources} source(s) selected"
-)
-
-
-process_button = st.button(
-    "⚡ Process All Sources",
-    use_container_width=True,
-    type="primary"
-)
-
-
-if process_button:
-
-    if total_sources == 0:
+    elif source_type == "📄 PDF" and selected_file is None:
 
         st.warning(
-            "Please add at least one source."
+            "Please select a PDF."
+        )
+
+    elif source_type == "🖼️ Image" and selected_file is None:
+
+        st.warning(
+            "Please select an image."
+        )
+
+    elif source_type in ["🌐 Website", "🎥 YouTube"] and not selected_url:
+
+        st.warning(
+            "Please enter a URL."
         )
 
     else:
 
-        all_docs = []
-        source_names = []
+        if source_type == "📄 PDF":
 
-        progress = st.progress(
-            0
+            st.session_state.sources.append(
+                {
+                    "type": "pdf",
+                    "name": selected_file.name,
+                    "file": selected_file
+                }
+            )
+
+        elif source_type == "🖼️ Image":
+
+            st.session_state.sources.append(
+                {
+                    "type": "image",
+                    "name": selected_file.name,
+                    "file": selected_file
+                }
+            )
+
+        elif source_type == "🌐 Website":
+
+            st.session_state.sources.append(
+                {
+                    "type": "website",
+                    "name": selected_url,
+                    "url": selected_url
+                }
+            )
+
+        elif source_type == "🎥 YouTube":
+
+            st.session_state.sources.append(
+                {
+                    "type": "youtube",
+                    "name": selected_url,
+                    "url": selected_url
+                }
+            )
+
+        st.rerun()
+
+
+if st.session_state.sources:
+
+    st.markdown(
+        f"**{len(st.session_state.sources)}/3 sources added**"
+    )
+
+    for index, source in enumerate(
+        st.session_state.sources
+    ):
+
+        col1, col2 = st.columns(
+            [8, 1]
         )
 
-        status = st.empty()
+        with col1:
 
-        try:
+            if source["type"] == "pdf":
+                icon = "📄"
 
-            current = 0
+            elif source["type"] == "website":
+                icon = "🌐"
 
-            total = total_sources
+            elif source["type"] == "youtube":
+                icon = "🎥"
 
-            if pdf_files:
+            else:
+                icon = "🖼️"
 
-                for pdf_file in pdf_files:
+            st.caption(
+                f"{icon} {source['name']}"
+            )
 
-                    status.info(
-                        f"Processing PDF: {pdf_file.name}"
-                    )
+        with col2:
 
-                    suffix = ".pdf"
+            if st.button(
+                "×",
+                key=f"remove_source_{index}"
+            ):
 
-                    with tempfile.NamedTemporaryFile(
-                        delete=False,
-                        suffix=suffix
-                    ) as temp:
+                st.session_state.sources.pop(
+                    index
+                )
 
-                        temp.write(
-                            pdf_file.getbuffer()
-                        )
-
-                        temp_path = temp.name
-
-                    try:
-
-                        docs = load_pdf(
-                            temp_path
-                        )
-
-                        for doc in docs:
-
-                            doc.metadata[
-                                "source_type"
-                            ] = "pdf"
-
-                            doc.metadata[
-                                "source"
-                            ] = pdf_file.name
-
-                        all_docs.extend(
-                            docs
-                        )
-
-                        source_names.append(
-                            f"📄 {pdf_file.name}"
-                        )
-
-                    finally:
-
-                        if os.path.exists(
-                            temp_path
-                        ):
-                            os.remove(
-                                temp_path
-                            )
-
-                    current += 1
-
-                    progress.progress(
-                        current / total
-                    )
+                st.rerun()
 
 
-            for url in website_list:
+process_sources = st.button(
+    "Process Sources",
+    use_container_width=True,
+    type="primary",
+    disabled=len(st.session_state.sources) == 0
+)
+
+
+if process_sources:
+
+    all_docs = []
+
+    progress = st.progress(0)
+    status = st.empty()
+
+    total = len(
+        st.session_state.sources
+    )
+
+    try:
+
+        for index, source in enumerate(
+            st.session_state.sources
+        ):
+
+            if source["type"] == "pdf":
 
                 status.info(
-                    f"Processing website: {url}"
+                    f"Processing PDF · {source['name']}"
+                )
+
+                with tempfile.NamedTemporaryFile(
+                    delete=False,
+                    suffix=".pdf"
+                ) as temp:
+
+                    temp.write(
+                        source["file"].getbuffer()
+                    )
+
+                    temp_path = temp.name
+
+                try:
+
+                    docs = load_pdf(
+                        temp_path
+                    )
+
+                finally:
+
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+
+                for doc in docs:
+
+                    doc.metadata["source_type"] = "pdf"
+                    doc.metadata["source"] = source["name"]
+
+            elif source["type"] == "website":
+
+                status.info(
+                    "Processing website..."
                 )
 
                 docs = load_webpage(
-                    url
+                    source["url"]
                 )
 
                 for doc in docs:
 
-                    doc.metadata[
-                        "source_type"
-                    ] = "webpage"
+                    doc.metadata["source_type"] = "webpage"
+                    doc.metadata["source"] = source["url"]
 
-                    doc.metadata[
-                        "source"
-                    ] = url
-
-                all_docs.extend(
-                    docs
-                )
-
-                source_names.append(
-                    f"🌐 {url}"
-                )
-
-                current += 1
-
-                progress.progress(
-                    current / total
-                )
-
-
-            for url in youtube_list:
+            elif source["type"] == "youtube":
 
                 status.info(
-                    f"Processing YouTube: {url}"
+                    "Extracting YouTube transcript..."
                 )
 
                 docs = load_youtube(
-                    url
+                    source["url"]
                 )
 
-                all_docs.extend(
-                    docs
+            else:
+
+                status.info(
+                    f"Running OCR · {source['name']}"
                 )
 
-                source_names.append(
-                    f"🎥 YouTube"
-                )
+                extension = os.path.splitext(
+                    source["file"].name
+                )[1]
 
-                current += 1
+                with tempfile.NamedTemporaryFile(
+                    delete=False,
+                    suffix=extension
+                ) as temp:
 
-                progress.progress(
-                    current / total
-                )
-
-
-            if image_files:
-
-                for image_file in image_files:
-
-                    status.info(
-                        f"Processing image: {image_file.name}"
+                    temp.write(
+                        source["file"].getbuffer()
                     )
 
-                    extension = os.path.splitext(
-                        image_file.name
-                    )[1]
+                    temp_path = temp.name
 
-                    with tempfile.NamedTemporaryFile(
-                        delete=False,
-                        suffix=extension
-                    ) as temp:
+                try:
 
-                        temp.write(
-                            image_file.getbuffer()
-                        )
-
-                        temp_path = temp.name
-
-                    try:
-
-                        docs = load_image(
-                            temp_path
-                        )
-
-                        for doc in docs:
-
-                            doc.metadata[
-                                "source_type"
-                            ] = "image"
-
-                            doc.metadata[
-                                "source"
-                            ] = image_file.name
-
-                        all_docs.extend(
-                            docs
-                        )
-
-                        source_names.append(
-                            f"🖼️ {image_file.name}"
-                        )
-
-                    finally:
-
-                        if os.path.exists(
-                            temp_path
-                        ):
-                            os.remove(
-                                temp_path
-                            )
-
-                    current += 1
-
-                    progress.progress(
-                        current / total
+                    docs = load_image(
+                        temp_path
                     )
 
+                finally:
 
-            status.info(
-                "Creating embeddings and updating knowledge base..."
-            )
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
 
-            add_to_chroma(
-                all_docs
-            )
+                for doc in docs:
+
+                    doc.metadata["source_type"] = "image"
+                    doc.metadata["source"] = source["name"]
+
+            all_docs.extend(docs)
 
             progress.progress(
-                1.0
+                (index + 1) / total
             )
 
-            status.success(
-                "Source processing completed."
-            )
+        status.info(
+            "Creating embeddings and updating knowledge base..."
+        )
 
-            st.session_state.source_ready = True
+        add_to_chroma(
+            all_docs
+        )
 
-            st.session_state.sources = source_names
+        progress.progress(1.0)
 
-            st.session_state.processed_source_count = len(
-                source_names
-            )
+        status.success(
+            "Sources processed successfully."
+        )
 
-        except Exception as e:
+        st.session_state.source_ready = True
 
-            status.empty()
+    except Exception:
 
-            st.error(
-                "Unable to process one or more sources."
-            )
+        progress.empty()
 
-            st.caption(
-                str(e)
-            )
+        status.error(
+            "Unable to process the selected sources. "
+            "Please check the files or URLs and try again."
+        )
 
 
 if st.session_state.source_ready:
@@ -547,62 +649,57 @@ if st.session_state.source_ready:
     st.markdown(
         """
         <div class="source-ready">
-            <div class="source-ready-title">
-                ✓ SOURCE READY
-            </div>
-            <div class="source-ready-text">
-                Your sources are available to SHAKAL.
-            </div>
+            <b>✓ KNOWLEDGE BASE READY</b>
+            <br>
+            <span style="opacity:0.55;font-size:12px;">
+                SHAKAL can now use your sources.
+            </span>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    for source in st.session_state.sources:
-
-        st.caption(
-            source
-        )
-
 
 st.markdown(
-    '<div class="section-title">AI Working Mode</div>',
+    '<div class="section-title">Personality</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="section-subtitle">'
+    'Choose how SHAKAL should teach you.'
+    '</div>',
     unsafe_allow_html=True
 )
 
 
-mode = st.radio(
-    "Choose how SHAKAL should answer",
+personality = st.selectbox(
+    "Choose personality",
     [
-        "Source + LLM/AI",
-        "Only My Source",
-        "Only LLM/AI"
+        "Normal",
+        "Theorist",
+        "Practicalist",
+        "Examiner",
+        "Guide"
     ],
     index=0,
-    horizontal=True
+    key="personality",
+    label_visibility="collapsed"
 )
 
 
-st.session_state.mode = mode
+PERSONALITY_DESCRIPTIONS = {
+    "Normal": "Balanced explanations with examples and clear summaries.",
+    "Theorist": "Deep focus on theory, principles and conceptual foundations.",
+    "Practicalist": "Focuses on implementation, applications and real-world use.",
+    "Examiner": "Strict academic evaluation, mistakes and exam preparation.",
+    "Guide": "Guides you step-by-step toward understanding and independent learning."
+}
 
 
-if mode == "Source + LLM/AI":
-
-    st.caption(
-        "Uses your sources as the primary knowledge and AI knowledge when needed."
-    )
-
-elif mode == "Only My Source":
-
-    st.caption(
-        "Answers strictly from your uploaded sources."
-    )
-
-else:
-
-    st.caption(
-        "Answers using the AI's general knowledge without your sources."
-    )
+st.caption(
+    PERSONALITY_DESCRIPTIONS[personality]
+)
 
 
 st.markdown(
@@ -610,28 +707,23 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown(
+    '<div class="section-subtitle">'
+    'Ask questions, learn concepts, revise and practice.'
+    '</div>',
+    unsafe_allow_html=True
+)
+
 
 for message in st.session_state.chat_history:
 
-    if message["role"] == "user":
+    with st.chat_message(
+        message["role"]
+    ):
 
-        with st.chat_message(
-            "user"
-        ):
-
-            st.write(
-                message["content"]
-            )
-
-    else:
-
-        with st.chat_message(
-            "assistant"
-        ):
-
-            st.write(
-                message["content"]
-            )
+        st.markdown(
+            message["content"]
+        )
 
 
 query = st.chat_input(
@@ -648,27 +740,21 @@ if query:
         }
     )
 
-    with st.chat_message(
-        "user"
-    ):
+    with st.chat_message("user"):
 
-        st.write(
-            query
-        )
+        st.markdown(query)
 
-    with st.chat_message(
-        "assistant"
-    ):
+    with st.chat_message("assistant"):
 
         processing = st.empty()
 
         processing.markdown(
             """
             <div class="processing">
-                <div class="processing-main">
+                <div class="processing-title">
                     Processing
                 </div>
-                <div class="processing-message">
+                <div class="processing-text">
                     [ aniket bhai ki taraf se hello! :) ]
                 </div>
             </div>
@@ -678,37 +764,117 @@ if query:
 
         try:
 
-            embedding_model = HuggingFaceEmbeddings(
-                model_name=(
-                    "sentence-transformers/"
-                    "all-MiniLM-L6-v2"
-                )
-            )
-
             llm = ChatMistralAI(
                 model="mistral-small-2506"
             )
 
-            if mode == "Only LLM/AI":
+            personality_prompt = PERSONALITIES[
+                personality
+            ]
+
+            if st.session_state.source_ready:
+
+                embedding_model = HuggingFaceEmbeddings(
+                    model_name=(
+                        "sentence-transformers/"
+                        "all-MiniLM-L6-v2"
+                    )
+                )
+
+                vectorstore = Chroma(
+                    persist_directory="chroma_db",
+                    embedding_function=embedding_model
+                )
+
+                retriever = vectorstore.as_retriever(
+                    search_type="mmr",
+                    search_kwargs={
+                        "k": 4,
+                        "fetch_k": 10,
+                        "lambda_mult": 0.5
+                    }
+                )
+
+                docs = retriever.invoke(
+                    query
+                )
+
+                context = "\n\n".join(
+                    doc.page_content
+                    for doc in docs
+                )
+
+                system_prompt = f"""
+{personality_prompt}
+
+You are also a source-grounded study assistant.
+
+The user has provided study material.
+
+Use the provided source as the PRIMARY source for answering.
+
+If the source does not contain enough information,
+you may use your general knowledge.
+
+If you use information that is not directly present
+in the source, clearly indicate that it comes from
+general knowledge.
+
+Never invent information.
+
+Study Source Context:
+
+{{context}}
+"""
 
                 prompt = ChatPromptTemplate.from_messages(
                     [
                         (
                             "system",
-                            """You are SHAKAL, a helpful AI
-study assistant.
-
-Your job is to help students understand,
-learn, revise and practice concepts.
-
-Explain concepts clearly and accurately.
-Use examples when useful.
-
-Answer using your general knowledge."""
+                            system_prompt
                         ),
                         (
                             "human",
-                            "{question}"
+                            """Student's Question:
+
+{question}"""
+                        )
+                    ]
+                )
+
+                final_prompt = prompt.invoke(
+                    {
+                        "context": context,
+                        "question": query
+                    }
+                )
+
+            else:
+
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        (
+                            "system",
+                            f"""
+{personality_prompt}
+
+You are SHAKAL, a study AI assistant.
+
+Help students and learners understand,
+learn, revise and practice academic topics.
+
+There is currently no external study source.
+
+Use your general knowledge.
+
+Be accurate, clear and student-friendly.
+"""
+                        ),
+                        (
+                            "human",
+                            """Student's Question:
+
+{question}"""
                         )
                     ]
                 )
@@ -719,134 +885,15 @@ Answer using your general knowledge."""
                     }
                 )
 
-                response = llm.invoke(
-                    final_prompt
-                )
+            response = llm.invoke(
+                final_prompt
+            )
 
-                answer = response.content
-
-            else:
-
-                if not st.session_state.source_ready:
-
-                    answer = (
-                        "Please upload and process "
-                        "a source first."
-                    )
-
-                else:
-
-                    vectorstore = Chroma(
-                        persist_directory="chroma_db",
-                        embedding_function=embedding_model
-                    )
-
-                    retriever = vectorstore.as_retriever(
-                        search_type="mmr",
-                        search_kwargs={
-                            "k": 4,
-                            "fetch_k": 10,
-                            "lambda_mult": 0.5
-                        }
-                    )
-
-                    docs = retriever.invoke(
-                        query
-                    )
-
-                    context = "\n\n".join(
-                        doc.page_content
-                        for doc in docs
-                    )
-
-                    if mode == "Only My Source":
-
-                        prompt = ChatPromptTemplate.from_messages(
-                            [
-                                (
-                                    "system",
-                                    """You are SHAKAL,
-a study assistant.
-
-You MUST answer using ONLY the
-provided source context.
-
-Do NOT use general knowledge.
-
-Do NOT invent information.
-
-If the answer is not present in
-the source, say exactly:
-
-"I could not find the answer in the provided source."
-"""
-                                ),
-                                (
-                                    "human",
-                                    """Source Context:
-
-{context}
-
-Question:
-
-{question}"""
-                                )
-                            ]
-                        )
-
-                    else:
-
-                        prompt = ChatPromptTemplate.from_messages(
-                            [
-                                (
-                                    "system",
-                                    """You are SHAKAL,
-a helpful AI study assistant.
-
-Use the user's source as the
-PRIMARY source for answering.
-
-You may use your general knowledge
-when the source does not contain
-enough information.
-
-If you use information not directly
-present in the source, make that clear.
-
-Help the student understand the
-topic accurately and clearly."""
-                                ),
-                                (
-                                    "human",
-                                    """Source Context:
-
-{context}
-
-Question:
-
-{question}"""
-                                )
-                            ]
-                        )
-
-                    final_prompt = prompt.invoke(
-                        {
-                            "context": context,
-                            "question": query
-                        }
-                    )
-
-                    response = llm.invoke(
-                        final_prompt
-                    )
-
-                    answer = response.content
+            answer = response.content
 
             processing.empty()
 
-            st.write(
-                answer
-            )
+            st.markdown(answer)
 
             st.session_state.chat_history.append(
                 {
@@ -855,19 +902,15 @@ Question:
                 }
             )
 
-        except Exception as e:
+        except Exception:
 
             processing.empty()
 
-            answer = (
-                "Sorry, something went wrong "
-                "while processing your request."
+            error_message = (
+                "Sorry, SHAKAL couldn't process "
+                "your request right now."
             )
 
             st.error(
-                answer
+                error_message
             )
-
-            st.caption(
-                str(e)
-)
