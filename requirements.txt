@@ -1,46 +1,40 @@
-# Environment
+# Streamlit UI
+streamlit
+
+# Environment variables
 python-dotenv
 
-# LangChain Core
+# LangChain
 langchain
 langchain-core
 langchain-community
 langchain-text-splitters
 
-# LangChain Integrations
-langchain-huggingface
-langchain-mistralai
-
 # Hugging Face Embeddings
+langchain-huggingface
 sentence-transformers
 transformers
 huggingface-hub
-tokenizers
-safetensors
 torch
 
-# Vector Database
+# Chroma Vector Database
 chromadb
+
+# Mistral AI
+langchain-mistralai
 
 # PDF Processing
 pypdf
 
 # Webpage Loading
 beautifulsoup4
-requests
 lxml
 
-# YouTube Transcript
+# HTTP Requests / Mistral OCR
+requests
+
+# YouTube Transcript Extraction
 youtube-transcript-api
 
 # Image Processing
 Pillow
-
-# HTTP / API Communication
-httpx
-aiohttp
-
-# Numerical / ML Dependencies
-numpy
-scipy
-scikit-learn
