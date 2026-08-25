@@ -62,7 +62,7 @@ st.markdown(
         padding-bottom: 4rem;
     }
 
-    /* ===== RESPONSIVE BRANDING (no more cut "L") ===== */
+    /* ===== RESPONSIVE BRANDING ===== */
     .brand {
         font-family: 'Space Grotesk', sans-serif;
         text-align: center;
@@ -169,7 +169,75 @@ st.markdown(
         margin-left: 16px;
     }
 
-    /* ===== PROCESSING BOX (with shimmer + facts) ===== */
+    /* ===== PERSONALITY PILLS — SINGLE CLICK, NO CUT NAMES ===== */
+
+    /* Hide the stray main widget label box */
+    [data-testid="stRadio"] > label,
+    [data-testid="stRadio"] > div > label {
+        display: none !important;
+    }
+
+    /* Pill container: wraps to next line on mobile instead of squeezing */
+    [data-testid="stRadio"] div[role="radiogroup"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        justify-content: center !important;
+    }
+
+    /* Individual pills */
+    [data-testid="stRadio"] div[role="radiogroup"] label {
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 999px !important;
+        padding: 10px 22px !important;
+        margin: 0 !important;
+        color: rgba(255, 255, 255, 0.8) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        white-space: nowrap !important;   /* <- names NEVER split mid-word */
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        backdrop-filter: blur(8px) !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    [data-testid="stRadio"] div[role="radiogroup"] label:hover {
+        border-color: #00f2fe !important;
+        background: rgba(0, 242, 254, 0.08) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 15px rgba(0, 242, 254, 0.15) !important;
+    }
+
+    /* Nuke the native radio circle completely */
+    [data-testid="stRadio"] div[role="radiogroup"] svg,
+    [data-testid="stRadio"] div[role="radiogroup"] input[type="radio"],
+    [data-testid="stRadio"] div[role="radiogroup"] [data-baseweb="radio"] {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+    }
+
+    [data-testid="stRadio"] div[role="radiogroup"] label > div {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Selected pill (instant single-click visual update) */
+    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
+        color: #0b0f19 !important;
+        border-color: transparent !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25) !important;
+    }
+
+    /* ===== PROCESSING BOX ===== */
     .processing {
         text-align: center;
         padding: 24px;
@@ -286,59 +354,6 @@ st.markdown(
         font-family: 'JetBrains Mono', monospace;
     }
 
-    /* ===== MODERN RADIO BUTTONS (SINGLE CLICK PERSONALITY FIX) ===== */
-    [data-testid="stRadio"] div[role="radiogroup"] {
-        display: flex !important;
-        gap: 12px !important;
-        flex-wrap: wrap !important;
-    }
-
-    [data-testid="stRadio"] label {
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 10px !important;
-        padding: 10px 20px !important;
-        margin: 0 !important;
-        color: rgba(255, 255, 255, 0.8) !important;
-        font-weight: 500 !important;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-        backdrop-filter: blur(8px) !important;
-        flex: 1 !important;
-        text-align: center !important;
-        min-width: 100px !important;
-        cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-
-    [data-testid="stRadio"] label:hover {
-        border-color: #00f2fe !important;
-        background: rgba(0, 242, 254, 0.08) !important;
-        color: #ffffff !important;
-        box-shadow: 0 0 15px rgba(0, 242, 254, 0.15) !important;
-    }
-
-    /* Active Selection (Single Click Visual Update) */
-    [data-testid="stRadio"] label:has(input:checked) {
-        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
-        color: #0b0f19 !important;
-        border: none !important;
-        font-weight: 700 !important;
-        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2) !important;
-    }
-
-    /* Hide the native ugly radio circle */
-    [data-testid="stRadio"] [data-baseweb="radio"] {
-        display: none !important;
-    }
-
-    /* Reset label padding from Streamlit default */
-    [data-testid="stRadio"] label div[data-testid="stRadioLabel"] {
-        padding: 0 !important;
-        width: 100% !important;
-    }
-
     /* ===== BUTTONS ===== */
     .stButton > button {
         font-family: 'Inter', sans-serif;
@@ -381,7 +396,7 @@ st.markdown(
         background: linear-gradient(90deg, #00f2fe, #4facfe);
     }
 
-    /* ===== CHAT INPUT (placeholder perfectly centered) ===== */
+    /* ===== CHAT INPUT (centered placeholder) ===== */
     .stChatInput textarea,
     [data-testid="stChatInputTextArea"] {
         border-radius: 12px !important;
@@ -599,24 +614,21 @@ if st.session_state.source_ready:
                 st.markdown(f'<div class="source-chip">{source}</div>', unsafe_allow_html=True)
 
 # ==========================================
-# PERSONALITY SELECTION (SINGLE-CLICK FIX)
+# PERSONALITY SELECTION (SINGLE-CLICK, NO CUT NAMES)
 # ==========================================
 st.markdown('<div class="section-title">Personality</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-subtitle">Choose how SHAKAL should teach you.</div>', unsafe_allow_html=True)
 
 personalities = ["Normal", "Theorist", "Practicalist", "Examiner", "Guide"]
 
-# Native single-click widget styled with CSS
 selected_personality = st.radio(
     "Personality",
     personalities,
-    horizontal=True,
     index=personalities.index(st.session_state.personality),
     label_visibility="collapsed",
     key="personality_selector"
 )
 
-# Instant state update without needing st.rerun()
 st.session_state.personality = selected_personality
 
 st.markdown(f'<div class="personality-info">Active personality · {st.session_state.personality}</div>', unsafe_allow_html=True)
