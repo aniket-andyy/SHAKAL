@@ -53,26 +53,32 @@ splitter = RecursiveCharacterTextSplitter(
 
 def load_pdf(pdf_path):
 
-    print(f"Loading PDF: {pdf_path}")
-
-    loader = PyPDFLoader(pdf_path)
+    loader = PyPDFLoader(
+        pdf_path
+    )
 
     docs = loader.load()
 
-    print(f"Loaded {len(docs)} PDF pages.")
+    for doc in docs:
+
+        doc.metadata["source_type"] = "pdf"
+        doc.metadata["source"] = pdf_path
 
     return docs
 
 
 def load_webpage(url):
 
-    print(f"Loading webpage: {url}")
-
-    loader = WebBaseLoader(url)
+    loader = WebBaseLoader(
+        url
+    )
 
     docs = loader.load()
 
-    print(f"Loaded {len(docs)} webpage documents.")
+    for doc in docs:
+
+        doc.metadata["source_type"] = "webpage"
+        doc.metadata["source"] = url
 
     return docs
 
@@ -93,6 +99,7 @@ def extract_youtube_video_id(url):
         )
 
         if match:
+
             return match.group(1)
 
     raise ValueError(
@@ -101,10 +108,6 @@ def extract_youtube_video_id(url):
 
 
 def load_youtube(url):
-
-    print(
-        f"Loading YouTube transcript: {url}"
-    )
 
     video_id = extract_youtube_video_id(
         url
@@ -121,6 +124,12 @@ def load_youtube(url):
         for segment in transcript
     )
 
+    if not text.strip():
+
+        raise ValueError(
+            "YouTube transcript is empty."
+        )
+
     document = Document(
         page_content=text,
         metadata={
@@ -130,18 +139,10 @@ def load_youtube(url):
         }
     )
 
-    print(
-        "YouTube transcript extracted."
-    )
-
     return [document]
 
 
 def load_image(image_path):
-
-    print(
-        f"Processing image: {image_path}"
-    )
 
     api_key = os.getenv(
         "MISTRAL_API_KEY"
@@ -185,25 +186,25 @@ def load_image(image_path):
         []
     ):
 
-        page_markdown = page.get(
+        markdown = page.get(
             "markdown",
             ""
         )
 
-        if page_markdown:
+        if markdown:
 
             text_parts.append(
-                page_markdown
+                markdown
             )
 
     text = "\n\n".join(
         text_parts
     )
 
-    if not text:
+    if not text.strip():
 
         raise ValueError(
-            "No text could be extracted from the image."
+            "No readable text found in image."
         )
 
     document = Document(
@@ -214,10 +215,6 @@ def load_image(image_path):
         }
     )
 
-    print(
-        "Image OCR completed."
-    )
-
     return [document]
 
 
@@ -226,28 +223,42 @@ def add_to_chroma(docs):
     if not docs:
 
         raise ValueError(
-            "No documents found."
+            "No documents were provided."
         )
 
     chunks = splitter.split_documents(
         docs
     )
 
-    print(
-        f"Created {len(chunks)} chunks."
+    if not chunks:
+
+        raise ValueError(
+            "No text chunks were created."
+        )
+
+    vectorstore = Chroma(
+        persist_directory=CHROMA_PATH,
+        embedding_function=embedding_model
     )
 
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embedding_model,
-        persist_directory=CHROMA_PATH
-    )
-
-    print(
-        "Documents successfully stored in Chroma."
+    vectorstore.add_documents(
+        documents=chunks
     )
 
     return vectorstore
+
+
+def clear_database():
+
+    if os.path.exists(
+        CHROMA_PATH
+    ):
+
+        import shutil
+
+        shutil.rmtree(
+            CHROMA_PATH
+        )
 
 
 if __name__ == "__main__":
@@ -347,9 +358,5 @@ if __name__ == "__main__":
     else:
 
         print(
-            "\nInvalid selection."
-        )
-
-    print(
-        "\nDatabase operation completed."
+            "Invalid selection."
     )
