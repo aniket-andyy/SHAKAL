@@ -93,22 +93,18 @@ def extract_youtube_video_id(url):
 def load_youtube(url):
     video_id = extract_youtube_video_id(url)
 
-    # Wrapped in try/except because the youtube_transcript_api library 
-    # recently updated and changed the .fetch() method structure.
     try:
+        # youtube_transcript_api >= 1.0
         api = YouTubeTranscriptApi()
         transcript = api.fetch(video_id)
-        text = " ".join(segment.text for segment in transcript)
+        text = " ".join(
+            segment.text if hasattr(segment, "text") else segment["text"]
+            for segment in transcript
+        )
     except Exception:
-        try:
-            # Fallback for newer youtube_transcript_api versions (>= 1.0.0)
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            transcript = transcript_list.find_generated_transcript(['en', 'hi', 'any']).fetch()
-            text = " ".join([t.text if hasattr(t, 'text') else t['text'] for t in transcript])
-        except Exception:
-            # Fallback for very old versions
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            text = " ".join([t['text'] for t in transcript])
+        # legacy API fallback
+        raw = YouTubeTranscriptApi.get_transcript(video_id)
+        text = " ".join(item["text"] for item in raw)
 
     if not text.strip():
         raise ValueError("YouTube transcript is empty.")
@@ -125,70 +121,124 @@ def load_youtube(url):
     return [document]
 
 
-def load_image(image_path):
-    """
-    FIXED: Mistral OCR API requires a JSON payload with a base64-encoded image,
-    NOT a multipart/form-data file upload.
-    """
-    api_key = os.getenv("MISTRAL_API_KEY")
-
-    if not api_key:
-        raise ValueError("MISTRAL_API_KEY not found.")
-
-    # 1. Read and encode the image to base64
+# ==========================================
+# IMAGE EXTRACTION — DOUBLE FALLBACK SYSTEM
+# ==========================================
+def _read_image_base64(image_path):
     with open(image_path, "rb") as image_file:
-        base64_string = base64.b64encode(image_file.read()).decode("utf-8")
+        encoded = base64.b64encode(
+            image_file.read()
+        ).decode("utf-8")
 
-    # 2. Guess the MIME type (default to image/jpeg)
     mime_type, _ = mimetypes.guess_type(image_path)
     if not mime_type:
         mime_type = "image/jpeg"
 
-    # 3. Build the Data URL format Mistral expects
-    data_url = f"data:{mime_type};base64,{base64_string}"
+    return encoded, mime_type
 
-    # 4. Construct the strict JSON payload
+
+def _extract_with_ocr(base64_string, mime_type, api_key):
+    """Method 1: Mistral dedicated OCR endpoint (JSON + base64 data URL)."""
     payload = {
         "model": "mistral-ocr-latest",
         "document": {
             "type": "image_url",
-            "image_url": data_url
+            "image_url": f"data:{mime_type};base64,{base64_string}",
         },
-        "include_image_base64": False  # We only need the extracted markdown text
     }
 
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
-    # 5. Send as JSON (do NOT use files= here)
     response = requests.post(
         "https://api.mistral.ai/v1/ocr",
         headers=headers,
         json=payload,
-        timeout=120
+        timeout=120,
     )
 
     response.raise_for_status()
     result = response.json()
 
-    text_parts = []
-    for page in result.get("pages", []):
-        markdown = page.get("markdown", "")
-        if markdown:
-            text_parts.append(markdown)
+    parts = [
+        page.get("markdown", "")
+        for page in result.get("pages", [])
+        if page.get("markdown")
+    ]
 
-    text = "\n\n".join(text_parts)
+    return "\n\n".join(parts)
 
-    if not text.strip():
-        raise ValueError("No readable text found in image.")
+
+def _extract_with_vision_llm(base64_string, mime_type):
+    """Method 2: Fallback — Mistral Small vision via chat completions."""
+    from langchain_mistralai import ChatMistralAI
+
+    llm = ChatMistralAI(model="mistral-small-2506")
+
+    response = llm.invoke(
+        [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "This image is study material. Extract ALL visible "
+                            "text word-for-word, then describe every diagram, "
+                            "chart, table, formula and concept in clear detail "
+                            "so a student can study using only your output."
+                        ),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mime_type};base64,{base64_string}"
+                        },
+                    },
+                ],
+            }
+        ]
+    )
+
+    return response.content
+
+
+def load_image(image_path):
+    api_key = os.getenv("MISTRAL_API_KEY")
+
+    if not api_key:
+        raise ValueError("MISTRAL_API_KEY not found.")
+
+    base64_string, mime_type = _read_image_base64(image_path)
+
+    text = ""
+    errors = []
+
+    # Try Method 1: OCR endpoint
+    try:
+        text = _extract_with_ocr(base64_string, mime_type, api_key)
+    except Exception as e:
+        errors.append(f"OCR: {e}")
+
+    # If OCR failed or returned nothing, try Method 2: Vision LLM
+    if not text or not text.strip():
+        try:
+            text = _extract_with_vision_llm(base64_string, mime_type)
+        except Exception as e:
+            errors.append(f"Vision: {e}")
+
+    if not text or not text.strip():
+        raise ValueError(
+            "No readable text found in image. " + " | ".join(errors)
+        )
 
     document = Document(
-        page_content=text,
+        page_content=text.strip(),
         metadata={
             "source_type": "image",
-            "source": image_path
+            "source": os.path.basename(image_path),
         }
     )
 
@@ -201,12 +251,14 @@ def add_to_chroma(docs):
 
     chunks = splitter.split_documents(docs)
 
-    # FIX: Filter out any empty chunks to prevent ChromaDB from crashing 
-    # (Sometimes OCR or PDF loaders produce blank pages)
-    chunks = [c for c in chunks if c.page_content and c.page_content.strip()]
+    # Safety: drop blank chunks (prevents Chroma crashes)
+    chunks = [
+        c for c in chunks
+        if c.page_content and c.page_content.strip()
+    ]
 
     if not chunks:
-        raise ValueError("No valid text chunks were created after filtering empty ones.")
+        raise ValueError("No valid text chunks were created.")
 
     vectorstore = Chroma(
         persist_directory=CHROMA_PATH,
@@ -240,28 +292,24 @@ if __name__ == "__main__":
     try:
         if choice == "1":
             path = input("Enter PDF path: ").strip()
-            docs = load_pdf(path)
-            add_to_chroma(docs)
+            add_to_chroma(load_pdf(path))
 
         elif choice == "2":
             url = input("Enter webpage URL: ").strip()
-            docs = load_webpage(url)
-            add_to_chroma(docs)
+            add_to_chroma(load_webpage(url))
 
         elif choice == "3":
             url = input("Enter YouTube URL: ").strip()
-            docs = load_youtube(url)
-            add_to_chroma(docs)
+            add_to_chroma(load_youtube(url))
 
         elif choice == "4":
             path = input("Enter image path: ").strip()
-            docs = load_image(path)
-            add_to_chroma(docs)
+            add_to_chroma(load_image(path))
 
         else:
             print("Invalid selection.")
-            
+
         print("\n✅ Successfully added to database!")
-        
+
     except Exception as e:
         print(f"\n❌ Error processing source: {e}")
