@@ -20,70 +20,75 @@ from langchain_core.prompts import ChatPromptTemplate
 st.set_page_config(
     page_title="SHAKAL - STUDY MADAD",
     page_icon="🧠",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="centered"
 )
 
 
 st.markdown(
     """
     <style>
-    #MainMenu, footer, header {
+    #MainMenu,
+    footer,
+    header {
         visibility: hidden;
     }
 
     .block-container {
-        max-width: 1050px;
-        padding-top: 2rem;
-        padding-bottom: 5rem;
-    }
-
-    .hero {
-        text-align: center;
-        padding: 20px 0 35px 0;
+        max-width: 900px;
+        padding-top: 35px;
+        padding-bottom: 80px;
     }
 
     .brand {
-        font-size: 56px;
+        text-align: center;
+        font-size: 52px;
         font-weight: 900;
-        letter-spacing: 8px;
+        letter-spacing: 7px;
         line-height: 1;
     }
 
     .subtitle {
-        font-size: 18px;
+        text-align: center;
+        font-size: 17px;
         font-weight: 600;
-        letter-spacing: 7px;
-        opacity: 0.65;
+        letter-spacing: 6px;
+        opacity: 0.55;
         margin-top: 10px;
     }
 
     .tagline {
+        text-align: center;
         font-size: 15px;
         opacity: 0.55;
-        margin-top: 18px;
+        margin-top: 20px;
     }
 
     .model {
+        text-align: center;
         font-size: 13px;
         opacity: 0.45;
         margin-top: 7px;
     }
 
     .developer {
+        text-align: center;
         font-size: 13px;
         opacity: 0.55;
-        margin-top: 16px;
+        margin-top: 15px;
+        line-height: 1.6;
     }
 
     .developer a {
         text-decoration: none;
     }
 
+    .section {
+        margin-top: 45px;
+    }
+
     .section-title {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 750;
-        margin-top: 30px;
         margin-bottom: 5px;
     }
 
@@ -93,40 +98,32 @@ st.markdown(
         margin-bottom: 20px;
     }
 
-    .card {
-        border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 16px;
-        padding: 20px;
-        background: rgba(255,255,255,0.025);
-        margin-bottom: 15px;
-    }
-
-    .source-limit {
-        text-align: right;
+    .source-note {
         font-size: 12px;
         opacity: 0.5;
-        margin-bottom: 10px;
+        margin-top: 8px;
+        margin-bottom: 18px;
     }
 
-    .source-ready {
+    .source-item {
         border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 14px;
-        padding: 16px;
-        margin-top: 20px;
-        background: rgba(255,255,255,0.025);
+        border-radius: 10px;
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        font-size: 14px;
     }
 
     .processing {
         text-align: center;
         padding: 15px;
         border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 14px;
-        margin-bottom: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
     }
 
     .processing-main {
+        font-size: 15px;
         font-weight: 700;
-        font-size: 16px;
     }
 
     .processing-message {
@@ -135,9 +132,17 @@ st.markdown(
         margin-top: 4px;
     }
 
-    .personality-info {
+    .ready {
+        margin-top: 15px;
+        padding: 12px 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.10);
         font-size: 13px;
-        opacity: 0.55;
+    }
+
+    .personality-description {
+        font-size: 13px;
+        opacity: 0.5;
         margin-top: 8px;
     }
     </style>
@@ -228,228 +233,289 @@ confident in studying."""
 
 st.markdown(
     """
-    <div class="hero">
-        <div class="brand">SHAKAL</div>
-        <div class="subtitle">STUDY MADAD</div>
+    <div class="brand">SHAKAL</div>
 
-        <div class="tagline">
-            Your AI Study Assistant
-        </div>
+    <div class="subtitle">STUDY MADAD</div>
 
-        <div class="model">
-            Model · Mistral Small 2506
-        </div>
+    <div class="tagline">
+        Your AI Study Assistant
+    </div>
 
-        <div class="developer">
-            Developed by Aniket Sharma
-            <br><br>
-            <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">
-                LinkedIn
-            </a>
-            &nbsp;&nbsp;·&nbsp;&nbsp;
-            <a href="https://github.com/aniket-andyy" target="_blank">
-                GitHub
-            </a>
-        </div>
+    <div class="model">
+        Model · Mistral Small 2506
+    </div>
+
+    <div class="developer">
+        Developed by Aniket Sharma
+        <br><br>
+        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">
+            LinkedIn
+        </a>
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+        <a href="https://github.com/aniket-andyy" target="_blank">
+            GitHub
+        </a>
     </div>
     """,
     unsafe_allow_html=True
 )
 
 
+# ============================================================
+# SOURCES
+# ============================================================
+
 st.markdown(
-    '<div class="section-title">Your Sources</div>',
+    '<div class="section">',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="section-title">Upload Your Sources</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    'Add up to 3 study sources to build your knowledge base.'
+    'Give SHAKAL your study material and start learning.'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    f'<div class="source-note">'
+    f'You can add up to 3 sources at a time · '
+    f'{len(st.session_state.sources)}/3 sources added'
     '</div>',
     unsafe_allow_html=True
 )
 
 
-source_type = st.selectbox(
-    "Source type",
-    [
-        "📄 PDF",
-        "🌐 Website",
-        "🎥 YouTube",
-        "🖼️ Image"
-    ],
-    index=0
+# ------------------------------------------------------------
+# PDF
+# ------------------------------------------------------------
+
+pdf_file = st.file_uploader(
+    "📄 PDF",
+    type=["pdf"],
+    accept_multiple_files=False
 )
 
+if pdf_file:
 
-pdf_file = None
-website_url = ""
-youtube_url = ""
-image_file = None
+    if not any(
+        source["id"] == f"pdf_{pdf_file.name}"
+        for source in st.session_state.sources
+    ):
 
-
-if source_type == "📄 PDF":
-
-    pdf_file = st.file_uploader(
-        "Upload PDF",
-        type=["pdf"],
-        accept_multiple_files=False
-    )
-
-
-elif source_type == "🌐 Website":
-
-    website_url = st.text_input(
-        "Website URL",
-        placeholder="https://example.com"
-    )
-
-
-elif source_type == "🎥 YouTube":
-
-    youtube_url = st.text_input(
-        "YouTube Video URL",
-        placeholder="https://youtube.com/watch?v=..."
-    )
-
-
-elif source_type == "🖼️ Image":
-
-    image_file = st.file_uploader(
-        "Upload Image",
-        type=["png", "jpg", "jpeg", "webp"],
-        accept_multiple_files=False
-    )
-
-
-st.markdown(
-    f'<div class="source-limit">'
-    f'{len(st.session_state.sources)} / 3 sources added'
-    f'</div>',
-    unsafe_allow_html=True
-)
-
-
-add_source = st.button(
-    "＋ Add Source",
-    use_container_width=True
-)
-
-
-if add_source:
-
-    if len(st.session_state.sources) >= 3:
-
-        st.error("Maximum 3 sources are allowed at a time.")
-
-    else:
-
-        valid = False
-        source_label = ""
-
-        if source_type == "📄 PDF" and pdf_file:
-
-            valid = True
-            source_label = f"📄 {pdf_file.name}"
-
-        elif source_type == "🌐 Website" and website_url.strip():
-
-            valid = True
-            source_label = f"🌐 {website_url.strip()}"
-
-        elif source_type == "🎥 YouTube" and youtube_url.strip():
-
-            valid = True
-            source_label = "🎥 YouTube Video"
-
-        elif source_type == "🖼️ Image" and image_file:
-
-            valid = True
-            source_label = f"🖼️ {image_file.name}"
-
-        if not valid:
-
-            st.warning("Please provide a valid source first.")
-
-        else:
+        if len(st.session_state.sources) < 3:
 
             st.session_state.sources.append(
                 {
-                    "type": source_type,
-                    "label": source_label,
-                    "file": pdf_file if source_type == "📄 PDF" else (
-                        image_file if source_type == "🖼️ Image" else None
-                    ),
-                    "url": website_url.strip() if source_type == "🌐 Website" else (
-                        youtube_url.strip() if source_type == "🎥 YouTube" else ""
-                    )
+                    "id": f"pdf_{pdf_file.name}",
+                    "type": "pdf",
+                    "name": pdf_file.name,
+                    "file": pdf_file,
+                    "url": None
                 }
             )
 
-            st.rerun()
+        else:
 
+            st.warning(
+                "Maximum 3 sources allowed."
+            )
+
+
+# ------------------------------------------------------------
+# WEBSITE
+# ------------------------------------------------------------
+
+website_url = st.text_input(
+    "🌐 Website",
+    placeholder="Paste website URL"
+)
+
+if st.button(
+    "Add Website",
+    use_container_width=True
+):
+
+    if not website_url.strip():
+
+        st.warning(
+            "Enter a website URL first."
+        )
+
+    elif len(st.session_state.sources) >= 3:
+
+        st.warning(
+            "Maximum 3 sources allowed."
+        )
+
+    else:
+
+        st.session_state.sources.append(
+            {
+                "id": f"web_{website_url.strip()}",
+                "type": "web",
+                "name": website_url.strip(),
+                "file": None,
+                "url": website_url.strip()
+            }
+        )
+
+        st.rerun()
+
+
+# ------------------------------------------------------------
+# YOUTUBE
+# ------------------------------------------------------------
+
+youtube_url = st.text_input(
+    "🎥 YouTube Video",
+    placeholder="Paste YouTube video URL"
+)
+
+if st.button(
+    "Add YouTube",
+    use_container_width=True
+):
+
+    if not youtube_url.strip():
+
+        st.warning(
+            "Enter a YouTube URL first."
+        )
+
+    elif len(st.session_state.sources) >= 3:
+
+        st.warning(
+            "Maximum 3 sources allowed."
+        )
+
+    else:
+
+        st.session_state.sources.append(
+            {
+                "id": f"yt_{youtube_url.strip()}",
+                "type": "youtube",
+                "name": youtube_url.strip(),
+                "file": None,
+                "url": youtube_url.strip()
+            }
+        )
+
+        st.rerun()
+
+
+# ------------------------------------------------------------
+# IMAGE
+# ------------------------------------------------------------
+
+image_file = st.file_uploader(
+    "🖼️ Image",
+    type=["png", "jpg", "jpeg", "webp"],
+    accept_multiple_files=False
+)
+
+if image_file:
+
+    if not any(
+        source["id"] == f"image_{image_file.name}"
+        for source in st.session_state.sources
+    ):
+
+        if len(st.session_state.sources) < 3:
+
+            st.session_state.sources.append(
+                {
+                    "id": f"image_{image_file.name}",
+                    "type": "image",
+                    "name": image_file.name,
+                    "file": image_file,
+                    "url": None
+                }
+            )
+
+        else:
+
+            st.warning(
+                "Maximum 3 sources allowed."
+            )
+
+
+# ============================================================
+# SELECTED SOURCES
+# ============================================================
 
 if st.session_state.sources:
 
     st.markdown(
-        '<div class="card">',
+        '<div class="section-title">Selected Sources</div>',
         unsafe_allow_html=True
     )
 
     for index, source in enumerate(
-        st.session_state.sources,
-        start=1
+        st.session_state.sources
     ):
 
         col1, col2 = st.columns(
-            [8, 1]
+            [9, 1]
         )
 
         with col1:
 
-            st.write(
-                f"**{index}. {source['label']}**"
+            icons = {
+                "pdf": "📄",
+                "web": "🌐",
+                "youtube": "🎥",
+                "image": "🖼️"
+            }
+
+            st.markdown(
+                f"""
+                <div class="source-item">
+                    {icons[source["type"]]}&nbsp;&nbsp;
+                    {source["name"]}
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
         with col2:
 
             if st.button(
                 "×",
-                key=f"remove_source_{index}"
+                key=f"remove_{source['id']}"
             ):
 
                 st.session_state.sources.pop(
-                    index - 1
+                    index
                 )
 
                 st.session_state.source_ready = False
 
                 st.rerun()
 
-    st.markdown(
-        '</div>',
-        unsafe_allow_html=True
-    )
 
+# ============================================================
+# PROCESS
+# ============================================================
 
-process_sources = st.button(
-    "⚡ Process Sources",
-    use_container_width=True,
-    type="primary"
-)
+if st.session_state.sources:
 
-
-if process_sources:
-
-    if not st.session_state.sources:
-
-        st.warning("Add at least one source.")
-
-    else:
+    if st.button(
+        "⚡ Process Sources",
+        use_container_width=True,
+        type="primary"
+    ):
 
         all_docs = []
 
-        progress = st.progress(0)
+        progress = st.progress(
+            0
+        )
 
         status = st.empty()
 
@@ -468,11 +534,7 @@ if process_sources:
                     f"Processing source {index}/{total}..."
                 )
 
-                source_type_value = source["type"]
-
-                if source_type_value == "📄 PDF":
-
-                    uploaded = source["file"]
+                if source["type"] == "pdf":
 
                     with tempfile.NamedTemporaryFile(
                         delete=False,
@@ -480,7 +542,7 @@ if process_sources:
                     ) as temp:
 
                         temp.write(
-                            uploaded.getbuffer()
+                            source["file"].getbuffer()
                         )
 
                         temp_path = temp.name
@@ -493,17 +555,29 @@ if process_sources:
 
                         for doc in docs:
 
-                            doc.metadata["source_type"] = "pdf"
-                            doc.metadata["source"] = uploaded.name
+                            doc.metadata[
+                                "source_type"
+                            ] = "pdf"
 
-                        all_docs.extend(docs)
+                            doc.metadata[
+                                "source"
+                            ] = source["name"]
+
+                        all_docs.extend(
+                            docs
+                        )
 
                     finally:
 
-                        if os.path.exists(temp_path):
-                            os.remove(temp_path)
+                        if os.path.exists(
+                            temp_path
+                        ):
 
-                elif source_type_value == "🌐 Website":
+                            os.remove(
+                                temp_path
+                            )
+
+                elif source["type"] == "web":
 
                     docs = load_webpage(
                         source["url"]
@@ -511,25 +585,32 @@ if process_sources:
 
                     for doc in docs:
 
-                        doc.metadata["source_type"] = "webpage"
-                        doc.metadata["source"] = source["url"]
+                        doc.metadata[
+                            "source_type"
+                        ] = "webpage"
 
-                    all_docs.extend(docs)
+                        doc.metadata[
+                            "source"
+                        ] = source["url"]
 
-                elif source_type_value == "🎥 YouTube":
+                    all_docs.extend(
+                        docs
+                    )
+
+                elif source["type"] == "youtube":
 
                     docs = load_youtube(
                         source["url"]
                     )
 
-                    all_docs.extend(docs)
+                    all_docs.extend(
+                        docs
+                    )
 
-                elif source_type_value == "🖼️ Image":
-
-                    uploaded = source["file"]
+                elif source["type"] == "image":
 
                     extension = os.path.splitext(
-                        uploaded.name
+                        source["file"].name
                     )[1]
 
                     with tempfile.NamedTemporaryFile(
@@ -538,7 +619,7 @@ if process_sources:
                     ) as temp:
 
                         temp.write(
-                            uploaded.getbuffer()
+                            source["file"].getbuffer()
                         )
 
                         temp_path = temp.name
@@ -551,15 +632,27 @@ if process_sources:
 
                         for doc in docs:
 
-                            doc.metadata["source_type"] = "image"
-                            doc.metadata["source"] = uploaded.name
+                            doc.metadata[
+                                "source_type"
+                            ] = "image"
 
-                        all_docs.extend(docs)
+                            doc.metadata[
+                                "source"
+                            ] = source["name"]
+
+                        all_docs.extend(
+                            docs
+                        )
 
                     finally:
 
-                        if os.path.exists(temp_path):
-                            os.remove(temp_path)
+                        if os.path.exists(
+                            temp_path
+                        ):
+
+                            os.remove(
+                                temp_path
+                            )
 
                 progress.progress(
                     index / total
@@ -573,10 +666,12 @@ if process_sources:
                 all_docs
             )
 
-            progress.progress(1.0)
+            progress.progress(
+                1.0
+            )
 
             status.success(
-                "Sources processed successfully."
+                "Sources are ready."
             )
 
             st.session_state.source_ready = True
@@ -586,8 +681,7 @@ if process_sources:
             status.empty()
 
             st.error(
-                "Unable to process the selected sources. "
-                "Please check the files or URLs and try again."
+                "Unable to process the selected sources."
             )
 
 
@@ -595,16 +689,26 @@ if st.session_state.source_ready:
 
     st.markdown(
         """
-        <div class="source-ready">
-            <strong>✓ SOURCE READY</strong><br>
-            <span style="opacity:0.55;">
-                Your selected study material is available to SHAKAL.
+        <div class="ready">
+            ✓ SOURCE READY
+            <br>
+            <span style="opacity:0.5;">
+                Your study material is available to SHAKAL.
             </span>
         </div>
         """,
         unsafe_allow_html=True
     )
 
+
+# ============================================================
+# PERSONALITY
+# ============================================================
+
+st.markdown(
+    '<div class="section">',
+    unsafe_allow_html=True
+)
 
 st.markdown(
     '<div class="section-title">Personality</div>',
@@ -620,15 +724,21 @@ st.markdown(
 
 
 personality = st.selectbox(
-    "SHAKAL personality",
-    list(PERSONALITIES.keys()),
+    "SHAKAL Personality",
+    [
+        "Normal",
+        "Theorist",
+        "Practicalist",
+        "Examiner",
+        "Guide"
+    ],
     index=0
 )
 
 st.session_state.personality = personality
 
 
-personality_descriptions = {
+descriptions = {
     "Normal": "Balanced explanations for everyday studying.",
     "Theorist": "Deep focus on theory, concepts and fundamentals.",
     "Practicalist": "Focus on real-world applications and implementation.",
@@ -638,12 +748,21 @@ personality_descriptions = {
 
 
 st.markdown(
-    f'<div class="personality-info">'
-    f'{personality_descriptions[personality]}'
+    f'<div class="personality-description">'
+    f'{descriptions[personality]}'
     f'</div>',
     unsafe_allow_html=True
 )
 
+
+# ============================================================
+# CHAT
+# ============================================================
+
+st.markdown(
+    '<div class="section">',
+    unsafe_allow_html=True
+)
 
 st.markdown(
     '<div class="section-title">Study Chat</div>',
@@ -676,11 +795,17 @@ if query:
         }
     )
 
-    with st.chat_message("user"):
+    with st.chat_message(
+        "user"
+    ):
 
-        st.write(query)
+        st.write(
+            query
+        )
 
-    with st.chat_message("assistant"):
+    with st.chat_message(
+        "assistant"
+    ):
 
         processing = st.empty()
 
@@ -708,7 +833,28 @@ if query:
                 st.session_state.personality
             ]
 
-            if st.session_state.source_ready:
+            if not st.session_state.source_ready:
+
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        (
+                            "system",
+                            personality_prompt
+                        ),
+                        (
+                            "human",
+                            "{question}"
+                        )
+                    ]
+                )
+
+                final_prompt = prompt.invoke(
+                    {
+                        "question": query
+                    }
+                )
+
+            else:
 
                 embedding_model = HuggingFaceEmbeddings(
                     model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -740,18 +886,18 @@ if query:
                 system_prompt = f"""
 {personality_prompt}
 
-You are also a source-grounded study assistant.
+You are SHAKAL, a study AI assistant.
 
-The student's provided study sources are the PRIMARY source
-for answering the question.
+The user's uploaded study sources are the PRIMARY source
+for answering questions.
 
-Use the source whenever relevant.
+Use the provided source whenever relevant.
 
-If the source does not contain enough information, you may use
-your general knowledge to help the student.
+You may use general knowledge when the source does not
+contain enough information.
 
-Clearly distinguish information from the source from information
-added using general knowledge.
+If you use general knowledge, clearly indicate that it is
+not directly present in the provided source.
 
 Never invent information.
 """
@@ -764,7 +910,7 @@ Never invent information.
                         ),
                         (
                             "human",
-                            """Study Source Context:
+                            """Study Source:
 
 {context}
 
@@ -782,27 +928,6 @@ Student Question:
                     }
                 )
 
-            else:
-
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        (
-                            "system",
-                            personality_prompt
-                        ),
-                        (
-                            "human",
-                            "{question}"
-                        )
-                    ]
-                )
-
-                final_prompt = prompt.invoke(
-                    {
-                        "question": query
-                    }
-                )
-
             response = llm.invoke(
                 final_prompt
             )
@@ -811,7 +936,9 @@ Student Question:
 
             processing.empty()
 
-            st.write(answer)
+            st.write(
+                answer
+            )
 
             st.session_state.chat_history.append(
                 {
@@ -826,4 +953,4 @@ Student Question:
 
             st.error(
                 "Sorry, SHAKAL could not process your request."
-)
+                    )
