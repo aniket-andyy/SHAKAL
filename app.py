@@ -286,6 +286,59 @@ st.markdown(
         font-family: 'JetBrains Mono', monospace;
     }
 
+    /* ===== MODERN RADIO BUTTONS (SINGLE CLICK PERSONALITY FIX) ===== */
+    [data-testid="stRadio"] div[role="radiogroup"] {
+        display: flex !important;
+        gap: 12px !important;
+        flex-wrap: wrap !important;
+    }
+
+    [data-testid="stRadio"] label {
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        margin: 0 !important;
+        color: rgba(255, 255, 255, 0.8) !important;
+        font-weight: 500 !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        backdrop-filter: blur(8px) !important;
+        flex: 1 !important;
+        text-align: center !important;
+        min-width: 100px !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    [data-testid="stRadio"] label:hover {
+        border-color: #00f2fe !important;
+        background: rgba(0, 242, 254, 0.08) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 15px rgba(0, 242, 254, 0.15) !important;
+    }
+
+    /* Active Selection (Single Click Visual Update) */
+    [data-testid="stRadio"] label:has(input:checked) {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
+        color: #0b0f19 !important;
+        border: none !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2) !important;
+    }
+
+    /* Hide the native ugly radio circle */
+    [data-testid="stRadio"] [data-baseweb="radio"] {
+        display: none !important;
+    }
+
+    /* Reset label padding from Streamlit default */
+    [data-testid="stRadio"] label div[data-testid="stRadioLabel"] {
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
     /* ===== BUTTONS ===== */
     .stButton > button {
         font-family: 'Inter', sans-serif;
@@ -334,9 +387,15 @@ st.markdown(
         border-radius: 12px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         background: rgba(255, 255, 255, 0.03) !important;
-        min-height: 50px !important;
-        line-height: 26px !important;
-        padding: 12px 16px !important;
+        min-height: 52px !important;
+        line-height: 24px !important;
+        padding: 14px 16px !important;
+    }
+
+    .stChatInput textarea::placeholder,
+    [data-testid="stChatInputTextArea"]::placeholder {
+        line-height: 24px !important;
+        vertical-align: middle !important;
     }
 
     .stChatInput textarea:focus,
@@ -540,24 +599,25 @@ if st.session_state.source_ready:
                 st.markdown(f'<div class="source-chip">{source}</div>', unsafe_allow_html=True)
 
 # ==========================================
-# PERSONALITY SELECTION
+# PERSONALITY SELECTION (SINGLE-CLICK FIX)
 # ==========================================
 st.markdown('<div class="section-title">Personality</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-subtitle">Choose how SHAKAL should teach you.</div>', unsafe_allow_html=True)
 
-personality_columns = st.columns(5)
 personalities = ["Normal", "Theorist", "Practicalist", "Examiner", "Guide"]
 
-for column, personality in zip(personality_columns, personalities):
-    with column:
-        if st.button(
-            personality,
-            use_container_width=True,
-            type="primary" if st.session_state.personality == personality else "secondary",
-            key=f"personality_{personality}"
-        ):
-            st.session_state.personality = personality
-            st.rerun()
+# Native single-click widget styled with CSS
+selected_personality = st.radio(
+    "Personality",
+    personalities,
+    horizontal=True,
+    index=personalities.index(st.session_state.personality),
+    label_visibility="collapsed",
+    key="personality_selector"
+)
+
+# Instant state update without needing st.rerun()
+st.session_state.personality = selected_personality
 
 st.markdown(f'<div class="personality-info">Active personality · {st.session_state.personality}</div>', unsafe_allow_html=True)
 
