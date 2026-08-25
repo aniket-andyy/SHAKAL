@@ -1,5 +1,7 @@
 import os
+import random
 import tempfile
+import itertools
 
 import streamlit as st
 
@@ -23,6 +25,22 @@ st.set_page_config(
 )
 
 # ==========================================
+# AI QUOTES & FACTS (shown while processing)
+# ==========================================
+AI_QUOTES = [
+    "“The best way to predict the future is to invent it.” — Alan Kay",
+    "“Intelligence is the ability to adapt to change.” — Stephen Hawking",
+    "“AI is probably the most important thing humanity has ever worked on.” — Sundar Pichai",
+    "“Machine intelligence is the last invention humanity will ever need to make.” — Nick Bostrom",
+    "⚡ Fun fact: The term “Artificial Intelligence” was coined in 1956 at the Dartmouth Conference.",
+    "⚡ Fun fact: The first chatbot, ELIZA, was built at MIT in 1966.",
+    "⚡ Fun fact: Neural networks are inspired by the neurons of the human brain.",
+    "⚡ Fun fact: Over 90% of the world's data was created in just the last few years.",
+    "⚡ Fun fact: RAG (Retrieval-Augmented Generation) is exactly how SHAKAL reads your sources!",
+    "“The question of whether machines can think is like the question of whether submarines can swim.” — Edsger Dijkstra",
+]
+
+# ==========================================
 # MODERN CSS INJECTION
 # ==========================================
 st.markdown(
@@ -30,12 +48,10 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* Base Styles */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
 
-    /* Hide Streamlit Branding */
     #MainMenu, footer, header, .stDeployButton {
         visibility: hidden;
     }
@@ -46,30 +62,31 @@ st.markdown(
         padding-bottom: 4rem;
     }
 
-    /* Typography & Branding */
+    /* ===== RESPONSIVE BRANDING (no more cut "L") ===== */
     .brand {
         font-family: 'Space Grotesk', sans-serif;
         text-align: center;
-        font-size: 80px;
+        font-size: clamp(38px, 10vw, 80px);
         font-weight: 700;
-        letter-spacing: 16px;
-        line-height: 1;
+        letter-spacing: clamp(4px, 1.6vw, 16px);
+        line-height: 1.1;
+        white-space: nowrap;
         background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #667eea 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 8px;
-        text-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
     }
 
     .subtitle {
         font-family: 'Space Grotesk', sans-serif;
         text-align: center;
-        font-size: 20px;
+        font-size: clamp(13px, 2.6vw, 20px);
         font-weight: 500;
-        letter-spacing: 18px;
+        letter-spacing: clamp(6px, 2.2vw, 18px);
+        margin-left: clamp(6px, 2.2vw, 18px);
         color: rgba(255, 255, 255, 0.5);
         text-transform: uppercase;
-        margin-left: 18px;
+        white-space: nowrap;
     }
 
     .tagline {
@@ -78,7 +95,6 @@ st.markdown(
         color: rgba(255, 255, 255, 0.6);
         margin-top: 30px;
         margin-bottom: 12px;
-        font-weight: 400;
     }
 
     .model {
@@ -121,10 +137,10 @@ st.markdown(
         transform: translateY(-1px);
     }
 
-    /* Section Styling */
+    /* ===== SECTIONS ===== */
     .section-title {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 24px;
+        font-size: clamp(20px, 4vw, 24px);
         font-weight: 600;
         margin-top: 60px;
         margin-bottom: 12px;
@@ -139,10 +155,8 @@ st.markdown(
         color: rgba(255, 255, 255, 0.5);
         margin-bottom: 28px;
         margin-left: 16px;
-        font-weight: 400;
     }
 
-    /* Containers & Cards */
     .source-note {
         padding: 16px 20px;
         border-radius: 12px;
@@ -153,9 +167,9 @@ st.markdown(
         color: rgba(255, 255, 255, 0.7);
         margin-bottom: 28px;
         margin-left: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
+    /* ===== PROCESSING BOX (with shimmer + facts) ===== */
     .processing {
         text-align: center;
         padding: 24px;
@@ -163,7 +177,6 @@ st.markdown(
         border: 1px solid rgba(79, 172, 254, 0.2);
         background: rgba(79, 172, 254, 0.05);
         margin: 20px 0;
-        box-shadow: 0 0 20px rgba(0, 242, 254, 0.05);
         position: relative;
         overflow: hidden;
     }
@@ -171,16 +184,12 @@ st.markdown(
     .processing::after {
         content: "";
         position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: linear-gradient(
-            to bottom right,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.05) 50%,
-            rgba(255, 255, 255, 0) 100%
-        );
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: linear-gradient(to bottom right,
+            rgba(255,255,255,0) 0%,
+            rgba(255,255,255,0.05) 50%,
+            rgba(255,255,255,0) 100%);
         transform: rotate(45deg);
         animation: shimmer 2.5s infinite;
     }
@@ -194,7 +203,6 @@ st.markdown(
         font-weight: 600;
         font-size: 18px;
         color: #4facfe;
-        letter-spacing: 0.5px;
         position: relative;
         z-index: 1;
     }
@@ -208,6 +216,19 @@ st.markdown(
         z-index: 1;
     }
 
+    .processing-fact {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-style: italic;
+        color: #00f2fe;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dashed rgba(255,255,255,0.15);
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ===== SOURCE READY & CHIPS ===== */
     .source-ready {
         padding: 20px 24px;
         border-radius: 12px;
@@ -215,7 +236,6 @@ st.markdown(
         background: rgba(0, 242, 254, 0.03);
         margin-top: 24px;
         margin-bottom: 16px;
-        margin-left: 16px;
         position: relative;
         overflow: hidden;
     }
@@ -223,10 +243,8 @@ st.markdown(
     .source-ready::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 2px;
+        top: 0; left: 0;
+        width: 100%; height: 2px;
         background: linear-gradient(90deg, transparent, #00f2fe, transparent);
     }
 
@@ -258,12 +276,6 @@ st.markdown(
         color: rgba(255, 255, 255, 0.8);
         text-align: center;
         width: 100%;
-        transition: all 0.3s ease;
-    }
-
-    .source-chip:hover {
-        border-color: #4facfe;
-        background: rgba(79, 172, 254, 0.08);
     }
 
     .personality-info {
@@ -272,10 +284,9 @@ st.markdown(
         color: rgba(255, 255, 255, 0.3);
         margin-top: 20px;
         font-family: 'JetBrains Mono', monospace;
-        letter-spacing: 0.5px;
     }
 
-    /* Modern Button Overrides */
+    /* ===== BUTTONS ===== */
     .stButton > button {
         font-family: 'Inter', sans-serif;
         font-weight: 500;
@@ -295,7 +306,6 @@ st.markdown(
         box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
     }
 
-    /* Primary Buttons */
     .stButton > button[kind="primary"],
     .stButton > button[data-testid="stBaseButton-primary"],
     .stButton > button[data-testid="baseButton-primary"] {
@@ -303,7 +313,6 @@ st.markdown(
         color: #0b0f19 !important;
         border: none !important;
         font-weight: 700 !important;
-        letter-spacing: 0.5px;
         box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
     }
 
@@ -315,29 +324,32 @@ st.markdown(
         filter: brightness(1.1);
     }
 
-    /* Progress Bar Styling */
     .stProgress > div > div > div > div {
         background: linear-gradient(90deg, #00f2fe, #4facfe);
     }
 
-    /* Chat Input Styling */
-    .stChatInput textarea {
+    /* ===== CHAT INPUT (placeholder perfectly centered) ===== */
+    .stChatInput textarea,
+    [data-testid="stChatInputTextArea"] {
         border-radius: 12px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         background: rgba(255, 255, 255, 0.03) !important;
+        min-height: 50px !important;
+        line-height: 26px !important;
+        padding: 12px 16px !important;
     }
-    .stChatInput textarea:focus {
+
+    .stChatInput textarea:focus,
+    [data-testid="stChatInputTextArea"]:focus {
         border-color: #00f2fe !important;
         box-shadow: 0 0 0 2px rgba(0, 242, 254, 0.2) !important;
     }
 
-    /* Chat messages */
-    .stChatMessage {
+    .stChatMessage, [data-testid="stChatMessage"] {
         background: rgba(255, 255, 255, 0.02) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         border-radius: 12px !important;
     }
-
     </style>
     """,
     unsafe_allow_html=True
@@ -348,18 +360,12 @@ st.markdown(
 # ==========================================
 if "sources" not in st.session_state:
     st.session_state.sources = []
-
 if "source_ready" not in st.session_state:
     st.session_state.source_ready = False
-
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-
 if "personality" not in st.session_state:
     st.session_state.personality = "Normal"
-
-if "source_type" not in st.session_state:
-    st.session_state.source_type = "📄 PDF"
 
 # ==========================================
 # HEADER & BRANDING
@@ -373,12 +379,12 @@ st.markdown(
     <div class="developer">
         Developed by <span class="dev-name">Aniket Sharma</span>
         <br><br>
-        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank" class="social-link">
+        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
             LinkedIn
         </a>
         &nbsp;&nbsp;·&nbsp;&nbsp;
-        <a href="https://github.com/aniket-andyy" target="_blank" class="social-link">
+        <a href="https://github.com/aniket-andyy" target="_blank">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
             GitHub
         </a>
@@ -388,47 +394,35 @@ st.markdown(
 )
 
 # ==========================================
-# UPLOAD SOURCES
+# UPLOAD SOURCES (ALL TYPES AT ONCE)
 # ==========================================
 st.markdown('<div class="section-title">Upload Your Sources</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-subtitle">Give SHAKAL your study material.</div>', unsafe_allow_html=True)
-st.markdown('<div class="source-note">You can add up to <b>3 sources</b> at a time.</div>', unsafe_allow_html=True)
+st.markdown('<div class="source-note">⚠️ You can process up to <b>3 sources</b> at a time — mix & match any type below.</div>', unsafe_allow_html=True)
 
-# Modern Segmented Control for Source Types
-cols = st.columns(4)
-source_types = ["📄 PDF", "🌐 Website", "🎥 YouTube", "🖼️ Image"]
+col_left, col_right = st.columns(2, gap="medium")
 
-for col, stype in zip(cols, source_types):
-    if col.button(
-        stype, 
-        use_container_width=True, 
-        type="primary" if st.session_state.source_type == stype else "secondary"
-    ):
-        st.session_state.source_type = stype
-        st.rerun()
+with col_left:
+    pdf_files = st.file_uploader("📄 PDF Files", type=["pdf"], accept_multiple_files=True)
+    website_text = st.text_area("🌐 Website URLs", placeholder="Paste one URL per line...")
 
-source_type = st.session_state.source_type
+with col_right:
+    image_files = st.file_uploader("🖼️ Image Files", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
+    youtube_text = st.text_area("🎥 YouTube URLs", placeholder="Paste one YouTube URL per line...")
 
-pdf_files = []
-website_urls = []
-youtube_urls = []
-image_files = []
+website_urls = [x.strip() for x in website_text.splitlines() if x.strip()]
+youtube_urls = [x.strip() for x in youtube_text.splitlines() if x.strip()]
 
-if source_type == "📄 PDF":
-    pdf_files = st.file_uploader("Upload PDF", type=["pdf"], accept_multiple_files=True)
-elif source_type == "🌐 Website":
-    website_text = st.text_area("Website URLs", placeholder="Paste one URL per line...")
-    website_urls = [x.strip() for x in website_text.splitlines() if x.strip()]
-elif source_type == "🎥 YouTube":
-    youtube_text = st.text_area("YouTube URLs", placeholder="Paste one YouTube URL per line...")
-    youtube_urls = [x.strip() for x in youtube_text.splitlines() if x.strip()]
-else:
-    image_files = st.file_uploader("Upload images", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
+total_sources = (
+    len(pdf_files or [])
+    + len(website_urls)
+    + len(youtube_urls)
+    + len(image_files or [])
+)
 
-total_sources = (len(pdf_files or []) + len(website_urls) + len(youtube_urls) + len(image_files or []))
 st.caption(f"{total_sources}/3 sources selected")
 
-process_button = st.button("Process Sources", use_container_width=True, type="primary")
+process_button = st.button("⚡ Process Sources", use_container_width=True, type="primary")
 
 if process_button:
     if total_sources == 0:
@@ -440,13 +434,25 @@ if process_button:
         source_names = []
         progress = st.progress(0)
         status = st.empty()
+        fact_cycle = itertools.cycle(AI_QUOTES)
+
+        def show_status(main_text):
+            status.markdown(
+                f"""
+                <div class="processing">
+                    <div class="processing-main">{main_text}</div>
+                    <div class="processing-fact">💡 {next(fact_cycle)}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         try:
             current = 0
 
             if pdf_files:
                 for file in pdf_files:
-                    status.info(f"Processing {file.name}...")
+                    show_status(f"Processing {file.name}...")
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp:
                         temp.write(file.getbuffer())
                         temp_path = temp.name
@@ -464,7 +470,7 @@ if process_button:
                     progress.progress(current / total_sources)
 
             for url in website_urls:
-                status.info("Processing website...")
+                show_status("Processing website...")
                 docs = load_webpage(url)
                 for doc in docs:
                     doc.metadata["source_type"] = "webpage"
@@ -475,16 +481,16 @@ if process_button:
                 progress.progress(current / total_sources)
 
             for url in youtube_urls:
-                status.info("Processing YouTube transcript...")
+                show_status("Processing YouTube transcript...")
                 docs = load_youtube(url)
                 all_docs.extend(docs)
-                source_names.append(f"🎥 YouTube")
+                source_names.append("🎥 YouTube")
                 current += 1
                 progress.progress(current / total_sources)
 
             if image_files:
                 for file in image_files:
-                    status.info(f"Processing {file.name}...")
+                    show_status(f"Processing {file.name}...")
                     extension = os.path.splitext(file.name)[1]
                     with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temp:
                         temp.write(file.getbuffer())
@@ -502,7 +508,7 @@ if process_button:
                     current += 1
                     progress.progress(current / total_sources)
 
-            status.info("Creating embeddings and updating knowledge base...")
+            show_status("Creating embeddings and updating knowledge base...")
             add_to_chroma(all_docs)
             progress.progress(1.0)
             status.success("Sources ready.")
@@ -521,15 +527,11 @@ if st.session_state.source_ready:
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 SOURCE READY
             </div>
-            <div class="source-ready-text">
-                Your study material is available to SHAKAL.
-            </div>
+            <div class="source-ready-text">Your study material is available to SHAKAL.</div>
         </div>
         """,
         unsafe_allow_html=True
     )
-    
-    # Source Chips
     num_sources = len(st.session_state.sources)
     if num_sources > 0:
         chip_cols = st.columns(num_sources)
@@ -595,10 +597,11 @@ if query:
     with st.chat_message("assistant"):
         processing = st.empty()
         processing.markdown(
-            """
+            f"""
             <div class="processing">
                 <div class="processing-main">Processing</div>
                 <div class="processing-message">[ aniket bhai ki taraf se hello! :) ]</div>
+                <div class="processing-fact">💡 {random.choice(AI_QUOTES)}</div>
             </div>
             """,
             unsafe_allow_html=True
@@ -618,7 +621,7 @@ if query:
                 retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 4, "fetch_k": 10, "lambda_mult": 0.5})
                 docs = retriever.invoke(query)
                 context = "\n\n".join(doc.page_content for doc in docs)
-                
+
                 system_prompt = f"""{personality_prompt}\n\nYou are answering using the student's provided study sources. Use the provided source as the PRIMARY source. You may use your general knowledge when the source does not contain enough information. If you use general knowledge, clearly state that the information is not directly present in the provided source. Help the student understand the topic accurately and clearly."""
                 prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "Study Source Context:\n\n{context}\n\nStudent Question:\n\n{question}")])
                 final_prompt = prompt.invoke({"context": context, "question": query})
