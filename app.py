@@ -1,616 +1,849 @@
-"""
-SHAKAL - STUDY MADAD
-A RAG-based Study AI Assistant.
-
-Streamlit frontend only. All RAG/LLM/embedding logic lives in backend/
-(refactored from the original main.py / database.py / embedding.py)
-and is imported here, not duplicated.
-"""
-
 import os
 import tempfile
 
 import streamlit as st
 
-from backend.loaders import process_source, SourceProcessingError
-from backend.rag import (
-    generate_response,
-    MODE_SOURCE_LLM,
-    MODE_SOURCE_ONLY,
-    MODE_LLM_ONLY,
+from dotenv import load_dotenv
+
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_mistralai import ChatMistralAI
+from langchain_core.prompts import ChatPromptTemplate
+
+from database import (
+    load_pdf,
+    load_webpage,
+    load_youtube,
+    load_image,
+    add_to_chroma
 )
 
-# ============================================================
-# PAGE CONFIG
-# ============================================================
+
+load_dotenv()
+
+if "MISTRAL_API_KEY" in st.secrets:
+    os.environ["MISTRAL_API_KEY"] = st.secrets["MISTRAL_API_KEY"]
+
 
 st.set_page_config(
-    page_title="SHAKAL — Study Madad",
-    page_icon="🗿",
-    layout="centered",
-    initial_sidebar_state="collapsed",
+    page_title="SHAKAL - STUDY MADAD",
+    page_icon="◈",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# ============================================================
-# STYLES
-# ============================================================
 
-def inject_css():
-    st.markdown(
-        """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+st.markdown(
+    """
+    <style>
 
-        :root {
-            --bg-main: #0a0a0c;
-            --bg-card: #131316;
-            --bg-input: #1a1a1e;
-            --border-subtle: #2a2a30;
-            --border-highlight: #3d3d46;
-            --accent: #6ee7b7;
-            --accent-dim: #34a37a;
-            --text-primary: #f2f2f5;
-            --text-secondary: #9a9aa5;
-            --text-muted: #5f5f6a;
-            --danger: #f28b82;
-        }
-
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-        }
-
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header[data-testid="stHeader"] {background: transparent;}
-        .stDeployButton {display: none;}
-
-        .stApp {
-            background: var(--bg-main);
-            color: var(--text-primary);
-        }
-
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 3rem;
-            max-width: 760px;
-        }
-
-        /* ---------- Header ---------- */
-        .shakal-header {
-            text-align: center;
-            padding: 1.5rem 0 2rem 0;
-        }
-        .shakal-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.6rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            color: var(--text-primary);
-            margin-bottom: -0.2rem;
-        }
-        .shakal-subtitle {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 500;
-            letter-spacing: 0.35em;
-            color: var(--accent);
-            text-transform: uppercase;
-            margin-bottom: 0.6rem;
-        }
-        .shakal-tagline {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.9rem;
-        }
-        .shakal-model-tag {
-            display: inline-block;
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            padding: 0.3rem 0.8rem;
-            border-radius: 999px;
-            margin-bottom: 0.7rem;
-        }
-        .shakal-credit {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-        .shakal-credit a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            border-bottom: 1px solid var(--border-highlight);
-            padding-bottom: 1px;
-        }
-        .shakal-credit a:hover {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
-        }
-
-        /* ---------- Section headings ---------- */
-        .section-heading {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-align: center;
-            margin-bottom: 0.15rem;
-        }
-        .section-subheading {
-            font-size: 0.88rem;
-            color: var(--text-secondary);
-            text-align: center;
-            margin-bottom: 1.3rem;
-        }
-
-        /* ---------- Cards ---------- */
-        .shakal-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            padding: 1.1rem 1.3rem;
-            margin-bottom: 1rem;
-        }
-
-        .source-ready-card {
-            background: linear-gradient(135deg, rgba(110,231,183,0.07), rgba(110,231,183,0.02));
-            border: 1px solid rgba(110,231,183,0.3);
-            border-radius: 14px;
-            padding: 0.9rem 1.2rem;
-            margin-bottom: 1.2rem;
-        }
-        .source-ready-label {
-            font-size: 0.68rem;
-            letter-spacing: 0.15em;
-            color: var(--accent);
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        .source-ready-value {
-            font-size: 0.92rem;
-            color: var(--text-primary);
-        }
-
-        /* ---------- Status text ---------- */
-        .status-line {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            text-align: center;
-            padding: 0.4rem 0;
-        }
-
-        .processing-block {
-            text-align: center;
-            padding: 0.6rem 0 0.2rem 0;
-        }
-        .processing-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-        .processing-note {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.15rem;
-            font-style: italic;
-        }
-
-        /* ---------- Chat bubbles ---------- */
-        .chat-row {
-            display: flex;
-            margin-bottom: 0.85rem;
-        }
-        .chat-row.user { justify-content: flex-end; }
-        .chat-row.ai { justify-content: flex-start; }
-
-        .chat-bubble {
-            max-width: 82%;
-            padding: 0.7rem 1rem;
-            border-radius: 14px;
-            font-size: 0.92rem;
-            line-height: 1.5;
-        }
-        .chat-bubble.user {
-            background: var(--bg-input);
-            border: 1px solid var(--border-highlight);
-            border-bottom-right-radius: 4px;
-        }
-        .chat-bubble.ai {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-bottom-left-radius: 4px;
-        }
-        .chat-label {
-            font-size: 0.65rem;
-            letter-spacing: 0.12em;
-            font-weight: 600;
-            margin-bottom: 0.3rem;
-            display: block;
-        }
-        .chat-label.user { color: var(--text-muted); text-align: right; }
-        .chat-label.ai { color: var(--accent); }
-
-        /* ---------- Buttons ---------- */
-        .stButton > button {
-            background: var(--text-primary);
-            color: #0a0a0c;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.88rem;
-            padding: 0.5rem 1.2rem;
-            transition: opacity 0.15s ease;
-        }
-        .stButton > button:hover {
-            opacity: 0.85;
-            color: #0a0a0c;
-        }
-
-        /* Inputs */
-        .stTextInput input, .stTextArea textarea {
-            background: var(--bg-input) !important;
-            border: 1px solid var(--border-subtle) !important;
-            color: var(--text-primary) !important;
-            border-radius: 10px !important;
-        }
-        .stTextInput input:focus, .stTextArea textarea:focus {
-            border-color: var(--accent) !important;
-        }
-
-        [data-testid="stFileUploaderDropzone"] {
-            background: var(--bg-input);
-            border: 1px dashed var(--border-highlight);
-            border-radius: 12px;
-        }
-
-        hr {
-            border-color: var(--border-subtle) !important;
-            margin: 1.6rem 0 !important;
-        }
-
-        /* Segmented control theming */
-        div[data-testid="stSegmentedControl"] label {
-            font-size: 0.82rem !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-# ============================================================
-# SESSION STATE
-# ============================================================
-
-def init_session_state():
-    defaults = {
-        "mode": "Source + LLM/AI",
-        "source_type": None,
-        "source_ready": False,
-        "source_label": None,
-        "source_icon": None,
-        "chat_history": [],
-        "processing": False,
+    #MainMenu {
+        visibility: hidden;
     }
-    for key, value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
+
+    footer {
+        visibility: hidden;
+    }
+
+    header {
+        visibility: hidden;
+    }
+
+    .stApp {
+        background: #08090c;
+        color: #f5f5f5;
+    }
+
+    .block-container {
+        max-width: 1050px;
+        padding-top: 2.5rem;
+        padding-bottom: 4rem;
+    }
+
+    .hero {
+        text-align: center;
+        padding: 30px 0 20px 0;
+    }
+
+    .brand {
+        font-size: 52px;
+        font-weight: 800;
+        letter-spacing: 8px;
+        line-height: 1;
+        color: #ffffff;
+    }
+
+    .subtitle {
+        font-size: 15px;
+        letter-spacing: 5px;
+        margin-top: 12px;
+        color: #8f96a3;
+        font-weight: 600;
+    }
+
+    .tagline {
+        margin-top: 20px;
+        font-size: 18px;
+        color: #c7cbd3;
+    }
+
+    .model {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 7px 14px;
+        border: 1px solid #292d35;
+        border-radius: 20px;
+        background: #111318;
+        color: #9da4b0;
+        font-size: 13px;
+    }
+
+    .developer {
+        margin-top: 18px;
+        color: #777f8d;
+        font-size: 13px;
+    }
+
+    .developer a {
+        color: #b9c0cb;
+        text-decoration: none;
+        margin: 0 7px;
+    }
+
+    .developer a:hover {
+        color: #ffffff;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 38px;
+        margin-bottom: 5px;
+    }
+
+    .section-description {
+        color: #777f8d;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .source-card {
+        background: #101217;
+        border: 1px solid #252a33;
+        border-radius: 16px;
+        padding: 22px;
+        margin-top: 10px;
+    }
+
+    .source-ready {
+        background: #101712;
+        border: 1px solid #263d2b;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-top: 18px;
+        color: #b7d8bd;
+    }
+
+    .processing {
+        background: #111318;
+        border: 1px solid #292d35;
+        border-radius: 14px;
+        padding: 18px;
+        margin: 15px 0;
+        text-align: center;
+    }
+
+    .processing-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .processing-message {
+        color: #777f8d;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
+    .mode-description {
+        text-align: center;
+        color: #777f8d;
+        font-size: 13px;
+        margin-top: 8px;
+        margin-bottom: 20px;
+    }
+
+    .chat-box {
+        background: #101217;
+        border: 1px solid #252a33;
+        border-radius: 16px;
+        padding: 18px;
+        margin: 12px 0;
+    }
+
+    .user-label {
+        color: #8f96a3;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 7px;
+    }
+
+    .ai-label {
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 7px;
+    }
+
+    .ai-processing {
+        color: #9da4b0;
+        font-size: 13px;
+        padding: 12px 0;
+    }
+
+    .source-meta {
+        color: #7f8794;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    div[data-testid="stFileUploader"] {
+        background: #0d0f13;
+        border-radius: 12px;
+    }
+
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextArea"] textarea {
+        background: #0d0f13;
+        color: #ffffff;
+        border: 1px solid #292e37;
+        border-radius: 10px;
+    }
+
+    button[kind="primary"] {
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    div[role="radiogroup"] {
+        gap: 8px;
+    }
+
+    div[role="radiogroup"] label {
+        background: #101217;
+        border: 1px solid #292e37;
+        border-radius: 10px;
+        padding: 12px 18px;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
-# ============================================================
-# RENDER FUNCTIONS
-# ============================================================
+if "mode" not in st.session_state:
+    st.session_state.mode = "Source + LLM/AI"
+
+if "source_ready" not in st.session_state:
+    st.session_state.source_ready = False
+
+if "source_name" not in st.session_state:
+    st.session_state.source_name = None
+
+if "source_type" not in st.session_state:
+    st.session_state.source_type = None
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
 
 def render_header():
+
     st.markdown(
         """
-        <div class="shakal-header">
-            <div class="shakal-title">SHAKAL</div>
-            <div class="shakal-subtitle">Study Madad</div>
-            <div class="shakal-tagline">Your AI Study Assistant</div>
-            <div class="shakal-model-tag">Model: Mistral Small 2506</div>
-            <div class="shakal-credit">
-                Developed by Aniket Sharma &nbsp;·&nbsp;
-                <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">LinkedIn</a>
-                &nbsp;|&nbsp;
-                <a href="https://github.com/aniket-andyy" target="_blank">GitHub</a>
+        <div class="hero">
+
+            <div class="brand">
+                SHAKAL
             </div>
+
+            <div class="subtitle">
+                STUDY MADAD
+            </div>
+
+            <div class="tagline">
+                Your AI Study Assistant
+            </div>
+
+            <div class="model">
+                Model · Mistral Small 2506
+            </div>
+
+            <div class="developer">
+                Developed by Aniket Sharma
+                <br>
+                <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">
+                    LinkedIn
+                </a>
+                |
+                <a href="https://github.com/aniket-andyy" target="_blank">
+                    GitHub
+                </a>
+            </div>
+
         </div>
         """,
-        unsafe_allow_html=True,
-    )
-
-
-SOURCE_OPTIONS = {
-    "PDF": {"icon": "📄", "type": "pdf"},
-    "Website Link": {"icon": "🌐", "type": "website"},
-    "YouTube Video": {"icon": "🎥", "type": "youtube"},
-    "Image": {"icon": "🖼️", "type": "image"},
-}
-
-
-def render_source_ready_card():
-    st.markdown(
-        f"""
-        <div class="source-ready-card">
-            <div class="source-ready-label">SOURCE READY</div>
-            <div class="source-ready-value">{st.session_state.source_icon} {st.session_state.source_label}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        unsafe_allow_html=True
     )
 
 
 def render_source_section():
-    st.markdown('<div class="section-heading">Upload Your Source</div>', unsafe_allow_html=True)
+
     st.markdown(
-        '<div class="section-subheading">Give SHAKAL your study material and start learning.</div>',
-        unsafe_allow_html=True,
+        '<div class="section-title">Upload Your Source</div>',
+        unsafe_allow_html=True
     )
 
-    if st.session_state.source_ready:
-        render_source_ready_card()
-        if st.button("Upload a different source", use_container_width=False):
-            st.session_state.source_ready = False
-            st.session_state.source_type = None
-            st.session_state.source_label = None
-            st.session_state.source_icon = None
-            st.rerun()
-        return
+    st.markdown(
+        '<div class="section-description">Give SHAKAL your study material and start learning.</div>',
+        unsafe_allow_html=True
+    )
 
-    labels = list(SOURCE_OPTIONS.keys())
-    icons = [SOURCE_OPTIONS[label]["icon"] for label in labels]
-    display_labels = [f"{icon}  {label}" for icon, label in zip(icons, labels)]
-
-    selected_display = st.radio(
+    source_type = st.radio(
         "Source type",
-        options=display_labels,
+        [
+            "📄 PDF",
+            "🌐 Website Link",
+            "🎥 YouTube Video",
+            "🖼️ Image"
+        ],
         horizontal=True,
-        label_visibility="collapsed",
-        key="source_type_selector",
+        label_visibility="collapsed"
     )
-    selected_label = labels[display_labels.index(selected_display)]
-    selected_type = SOURCE_OPTIONS[selected_label]["type"]
-    selected_icon = SOURCE_OPTIONS[selected_label]["icon"]
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="source-card">', unsafe_allow_html=True)
 
-    # --- PDF ---
-    if selected_type == "pdf":
-        uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
-        if uploaded_file is not None:
-            size_kb = uploaded_file.size / 1024
-            st.markdown(
-                f'<div class="status-line">{uploaded_file.name} · {size_kb:.1f} KB · ready to process</div>',
-                unsafe_allow_html=True,
-            )
-            if st.button("Process Source", key="process_pdf"):
-                handle_process_source("pdf", uploaded_file, selected_icon)
+    uploaded_file = None
+    url = None
 
-    # --- WEBSITE ---
-    elif selected_type == "website":
-        url = st.text_input("Paste Website URL", placeholder="https://example.com/article")
-        if st.button("Process Source", key="process_website"):
-            if url.strip():
-                handle_process_source("website", url.strip(), selected_icon)
-            else:
-                st.markdown('<div class="status-line">Please enter a URL first.</div>', unsafe_allow_html=True)
+    if source_type == "📄 PDF":
 
-    # --- YOUTUBE ---
-    elif selected_type == "youtube":
-        url = st.text_input("Paste YouTube Video URL", placeholder="https://youtube.com/watch?v=...")
-        if st.button("Process Source", key="process_youtube"):
-            if url.strip():
-                handle_process_source("youtube", url.strip(), selected_icon)
-            else:
-                st.markdown('<div class="status-line">Please enter a URL first.</div>', unsafe_allow_html=True)
-
-    # --- IMAGE ---
-    elif selected_type == "image":
-        uploaded_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg", "webp"])
-        if uploaded_file is not None:
-            size_kb = uploaded_file.size / 1024
-            st.markdown(
-                f'<div class="status-line">{uploaded_file.name} · {size_kb:.1f} KB · ready to process</div>',
-                unsafe_allow_html=True,
-            )
-            if st.button("Process Source", key="process_image"):
-                handle_process_source("image", uploaded_file, selected_icon)
-
-
-def handle_process_source(source_type, value, icon):
-    """Runs process_source() with staged status messages, then updates session state."""
-    status = st.empty()
-
-    stages = ["Processing source...", "Extracting content...", "Creating embeddings...", "Updating knowledge base..."]
-    for stage in stages:
-        status.markdown(f'<div class="status-line">{stage}</div>', unsafe_allow_html=True)
-
-    try:
-        # File uploads (pdf/image) need to be written to a temp path for the
-        # existing loaders (PyPDFLoader / OCR request) which expect a file path.
-        if source_type in ("pdf", "image"):
-            suffix = os.path.splitext(value.name)[1]
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                tmp.write(value.getbuffer())
-                tmp_path = tmp.name
-
-            label_hint = value.name
-            result = process_source(source_type, tmp_path)
-            result["label"] = label_hint  # prefer original filename over temp path
-            os.unlink(tmp_path)
-        else:
-            result = process_source(source_type, value)
-
-        status.markdown('<div class="status-line">Source ready.</div>', unsafe_allow_html=True)
-
-        st.session_state.source_ready = True
-        st.session_state.source_type = source_type
-        st.session_state.source_label = result["label"]
-        st.session_state.source_icon = icon
-        st.rerun()
-
-    except SourceProcessingError as e:
-        status.markdown(f'<div class="status-line">{e}</div>', unsafe_allow_html=True)
-    except Exception:
-        status.markdown(
-            '<div class="status-line">Unable to process this source. Please check the file or URL and try again.</div>',
-            unsafe_allow_html=True,
+        uploaded_file = st.file_uploader(
+            "Upload PDF",
+            type=["pdf"],
+            label_visibility="visible"
         )
 
+        if uploaded_file:
+            st.caption(
+                f"{uploaded_file.name} · "
+                f"{uploaded_file.size / 1024:.1f} KB"
+            )
 
-MODE_LABELS = {
-    "Source + LLM/AI": {
-        "value": MODE_SOURCE_LLM,
-        "desc": "Uses your source as the primary knowledge and AI knowledge when needed.",
-    },
-    "Only My Source": {
-        "value": MODE_SOURCE_ONLY,
-        "desc": "Answers strictly from your uploaded source.",
-    },
-    "Only LLM/AI": {
-        "value": MODE_LLM_ONLY,
-        "desc": "Answers using the AI's general knowledge without your source.",
-    },
-}
+    elif source_type == "🌐 Website Link":
+
+        url = st.text_input(
+            "Paste Website URL",
+            placeholder="https://example.com/article"
+        )
+
+    elif source_type == "🎥 YouTube Video":
+
+        url = st.text_input(
+            "Paste YouTube Video URL",
+            placeholder="https://youtube.com/watch?v=..."
+        )
+
+    elif source_type == "🖼️ Image":
+
+        uploaded_file = st.file_uploader(
+            "Upload Image",
+            type=["png", "jpg", "jpeg", "webp"],
+            label_visibility="visible"
+        )
+
+        if uploaded_file:
+            st.caption(
+                f"{uploaded_file.name} · "
+                f"{uploaded_file.size / 1024:.1f} KB"
+            )
+
+    process = st.button(
+        "Process Source",
+        type="primary",
+        use_container_width=True
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if process:
+
+        try:
+
+            with st.status(
+                "Processing source...",
+                expanded=True
+            ) as status:
+
+                st.write("Extracting content...")
+
+                if source_type == "📄 PDF":
+
+                    if not uploaded_file:
+                        st.error("Please upload a PDF.")
+                        return
+
+                    suffix = ".pdf"
+
+                    with tempfile.NamedTemporaryFile(
+                        delete=False,
+                        suffix=suffix
+                    ) as temp:
+
+                        temp.write(
+                            uploaded_file.getbuffer()
+                        )
+
+                        temp_path = temp.name
+
+                    docs = load_pdf(temp_path)
+
+                    st.write("Creating embeddings...")
+
+                    add_to_chroma(docs)
+
+                    os.unlink(temp_path)
+
+                    st.session_state.source_name = uploaded_file.name
+                    st.session_state.source_type = "📄 PDF"
+
+                elif source_type == "🌐 Website Link":
+
+                    if not url:
+                        st.error("Please enter a website URL.")
+                        return
+
+                    docs = load_webpage(url)
+
+                    st.write("Creating embeddings...")
+
+                    add_to_chroma(docs)
+
+                    st.session_state.source_name = url
+                    st.session_state.source_type = "🌐 Website"
+
+                elif source_type == "🎥 YouTube Video":
+
+                    if not url:
+                        st.error("Please enter a YouTube URL.")
+                        return
+
+                    docs = load_youtube(url)
+
+                    st.write("Creating embeddings...")
+
+                    add_to_chroma(docs)
+
+                    st.session_state.source_name = url
+                    st.session_state.source_type = "🎥 YouTube"
+
+                elif source_type == "🖼️ Image":
+
+                    if not uploaded_file:
+                        st.error("Please upload an image.")
+                        return
+
+                    suffix = os.path.splitext(
+                        uploaded_file.name
+                    )[1]
+
+                    with tempfile.NamedTemporaryFile(
+                        delete=False,
+                        suffix=suffix
+                    ) as temp:
+
+                        temp.write(
+                            uploaded_file.getbuffer()
+                        )
+
+                        temp_path = temp.name
+
+                    st.write("Extracting text with Mistral OCR...")
+
+                    docs = load_image(temp_path)
+
+                    st.write("Creating embeddings...")
+
+                    add_to_chroma(docs)
+
+                    os.unlink(temp_path)
+
+                    st.session_state.source_name = uploaded_file.name
+                    st.session_state.source_type = "🖼️ Image"
+
+                st.session_state.source_ready = True
+
+                status.update(
+                    label="Source ready.",
+                    state="complete"
+                )
+
+            st.rerun()
+
+        except Exception:
+
+            st.error(
+                "Unable to process this source. "
+                "Please check the file or URL and try again."
+            )
+
+
+def render_source_status():
+
+    if st.session_state.source_ready:
+
+        st.markdown(
+            f"""
+            <div class="source-ready">
+                <strong>SOURCE READY</strong>
+                <div class="source-meta">
+                    {st.session_state.source_type}
+                    &nbsp;·&nbsp;
+                    {st.session_state.source_name}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 
 def render_mode_selector():
-    st.markdown('<div class="section-heading">AI Working Mode</div>', unsafe_allow_html=True)
-
-    options = list(MODE_LABELS.keys())
-
-    try:
-        selected = st.segmented_control(
-            "Mode",
-            options=options,
-            default=st.session_state.mode,
-            label_visibility="collapsed",
-        )
-        if selected:
-            st.session_state.mode = selected
-    except AttributeError:
-        # Fallback for older Streamlit versions without segmented_control
-        selected = st.radio(
-            "Mode",
-            options=options,
-            index=options.index(st.session_state.mode),
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-        st.session_state.mode = selected
 
     st.markdown(
-        f'<div class="section-subheading">{MODE_LABELS[st.session_state.mode]["desc"]}</div>',
-        unsafe_allow_html=True,
+        '<div class="section-title">AI Working Mode</div>',
+        unsafe_allow_html=True
+    )
+
+    modes = [
+        "Source + LLM/AI",
+        "Only My Source",
+        "Only LLM/AI"
+    ]
+
+    selected = st.radio(
+        "Working mode",
+        modes,
+        index=modes.index(
+            st.session_state.mode
+        ),
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+
+    st.session_state.mode = selected
+
+    descriptions = {
+        "Source + LLM/AI":
+            "Uses your source as the primary knowledge and AI knowledge when needed.",
+
+        "Only My Source":
+            "Answers strictly from your uploaded source.",
+
+        "Only LLM/AI":
+            "Answers using the AI's general knowledge without your source."
+    }
+
+    st.markdown(
+        f"""
+        <div class="mode-description">
+            {descriptions[selected]}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
-def render_chat():
-    st.markdown('<div class="section-heading">Ask SHAKAL</div>', unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+def get_rag_components():
 
-    for entry in st.session_state.chat_history:
-        role = entry["role"]
-        text = entry["content"]
-        if role == "user":
-            st.markdown(
-                f"""
-                <div class="chat-row user">
-                    <div>
-                        <span class="chat-label user">YOU</span>
-                        <div class="chat-bubble user">{text}</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f"""
-                <div class="chat-row ai">
-                    <div>
-                        <span class="chat-label ai">SHAKAL</span>
-                        <div class="chat-bubble ai">{text}</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
-    if st.session_state.processing:
-        st.markdown(
-            """
-            <div class="processing-block">
-                <div class="processing-label">Processing</div>
-                <div class="processing-note">[ aniket bhai ki taraf se hello! :) ]</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    vectorstore = Chroma(
+        persist_directory="chroma_db",
+        embedding_function=embedding_model
+    )
+
+    retriever = vectorstore.as_retriever(
+        search_type="mmr",
+        search_kwargs={
+            "k": 4,
+            "fetch_k": 10,
+            "lambda_mult": 0.5
+        }
+    )
+
+    llm = ChatMistralAI(
+        model="mistral-small-2506"
+    )
+
+    return retriever, llm
+
+
+def generate_response(query):
+
+    retriever, llm = get_rag_components()
+
+    if st.session_state.mode == "Only LLM/AI":
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """You are a Study AI Assistant designed to help students
+learn, understand, revise, and explore academic topics.
+
+Your goal is to make studying easier and more effective.
+
+Answer the student's question using your general knowledge.
+
+Explain difficult concepts clearly and step-by-step.
+
+When useful, provide examples, analogies, key points,
+practical applications, comparisons, and short summaries.
+
+There is no external study source available."""
+                ),
+                (
+                    "human",
+                    "{question}"
+                )
+            ]
         )
 
-    with st.form(key="chat_form", clear_on_submit=True):
-        col1, col2 = st.columns([5, 1])
-        with col1:
-            query = st.text_input(
-                "Ask SHAKAL anything about your studies...",
-                placeholder="Ask SHAKAL anything about your studies...",
-                label_visibility="collapsed",
+        final_prompt = prompt.invoke(
+            {"question": query}
+        )
+
+        return llm.invoke(
+            final_prompt
+        ).content
+
+    docs = retriever.invoke(query)
+
+    if not docs:
+
+        return (
+            "I could not find the answer "
+            "in the provided source."
+        )
+
+    context = "\n\n".join(
+        doc.page_content
+        for doc in docs
+    )
+
+    if st.session_state.mode == "Only My Source":
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """You are a Study AI Assistant designed to help students
+understand and learn from their provided study material.
+
+You MUST answer using ONLY the provided source.
+
+Do NOT use your general knowledge.
+
+Do NOT invent, assume, or add information that is not supported
+by the provided source.
+
+Explain the answer clearly and in a student-friendly way.
+
+If the answer is not present in the source, say exactly:
+
+"I could not find the answer in the provided source." """
+                ),
+                (
+                    "human",
+                    """Study Source Context:
+
+{context}
+
+Student's Question:
+
+{question}"""
+                )
+            ]
+        )
+
+    else:
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """You are a Study AI Assistant designed to help students
+learn, understand, revise, and explore academic topics.
+
+The provided context comes from the user's study source.
+
+Use the source as the PRIMARY source for answering.
+
+You may use general knowledge when the source does not contain
+enough information.
+
+If you use general knowledge, clearly state that it is not directly
+present in the provided source.
+
+Explain difficult concepts clearly and step-by-step."""
+                ),
+                (
+                    "human",
+                    """Study Source Context:
+
+{context}
+
+Student's Question:
+
+{question}"""
+                )
+            ]
+        )
+
+    final_prompt = prompt.invoke(
+        {
+            "context": context,
+            "question": query
+        }
+    )
+
+    return llm.invoke(
+        final_prompt
+    ).content
+
+
+def render_chat():
+
+    st.markdown(
+        '<div class="section-title">Study With SHAKAL</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="section-description">Ask questions, understand concepts, and learn smarter.</div>',
+        unsafe_allow_html=True
+    )
+
+    for message in st.session_state.chat_history:
+
+        if message["role"] == "user":
+
+            st.markdown(
+                f"""
+                <div class="chat-box">
+                    <div class="user-label">YOU</div>
+                    <div>{message["content"]}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
             )
-        with col2:
-            submitted = st.form_submit_button("Send", use_container_width=True)
 
-    if submitted and query.strip():
-        st.session_state.chat_history.append({"role": "user", "content": query.strip()})
-        st.session_state.processing = True
-        st.rerun()
+        else:
 
+            st.markdown(
+                f"""
+                <div class="chat-box">
+                    <div class="ai-label">SHAKAL</div>
+                    <div>{message["content"]}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-def handle_pending_response():
-    """If the last message is an unanswered user query, generate a response now."""
-    if not st.session_state.processing:
-        return
+    query = st.text_area(
+        "Prompt",
+        placeholder="Ask SHAKAL anything about your studies...",
+        height=120,
+        label_visibility="collapsed"
+    )
 
-    history = st.session_state.chat_history
-    if not history or history[-1]["role"] != "user":
-        st.session_state.processing = False
-        return
+    send = st.button(
+        "Send",
+        type="primary",
+        use_container_width=True
+    )
 
-    query = history[-1]["content"]
-    mode_value = MODE_LABELS[st.session_state.mode]["value"]
+    if send and query.strip():
 
-    try:
-        response_text = generate_response(query, mode_value)
-    except Exception:
-        response_text = "Something went wrong while generating a response. Please try again."
+        query = query.strip()
 
-    st.session_state.chat_history.append({"role": "ai", "content": response_text})
-    st.session_state.processing = False
-    st.rerun()
+        st.session_state.chat_history.append(
+            {
+                "role": "user",
+                "content": query
+            }
+        )
 
+        processing_placeholder = st.empty()
 
-# ============================================================
-# MAIN
-# ============================================================
+        processing_placeholder.markdown(
+            """
+            <div class="processing">
+                <div class="processing-title">
+                    Processing
+                </div>
+                <div class="processing-message">
+                    [ aniket bhai ki taraf se hello! :) ]
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        try:
+
+            answer = generate_response(
+                query
+            )
+
+            processing_placeholder.empty()
+
+            st.session_state.chat_history.append(
+                {
+                    "role": "assistant",
+                    "content": answer
+                }
+            )
+
+            st.rerun()
+
+        except Exception:
+
+            processing_placeholder.empty()
+
+            st.error(
+                "Unable to generate a response. "
+                "Please check your API key and backend configuration."
+            )
+
 
 def main():
-    inject_css()
-    init_session_state()
 
     render_header()
-    st.markdown("<hr>", unsafe_allow_html=True)
 
     render_source_section()
-    st.markdown("<hr>", unsafe_allow_html=True)
+
+    render_source_status()
 
     render_mode_selector()
-    st.markdown("<hr>", unsafe_allow_html=True)
 
     render_chat()
-
-    # Runs after the "Processing" indicator has already been rendered above,
-    # so the user sees it before the (blocking) LLM call happens.
-    handle_pending_response()
 
 
 if __name__ == "__main__":
