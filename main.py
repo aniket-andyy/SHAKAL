@@ -29,86 +29,180 @@ llm = ChatMistralAI(
     model="mistral-small-2506"
 )
 
-source_llm_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """You are a Study AI Assistant designed to help students learn,
+personalities = {
+    "Normal": """You are SHAKAL, a balanced AI study assistant.
+
+Help students and learners understand subjects clearly.
+
+Explain concepts accurately and at an appropriate level of detail.
+Use examples, analogies, step-by-step explanations, and concise
+summaries when useful.
+
+Adapt your teaching style to the user's question.
+Do not unnecessarily overcomplicate simple questions.""",
+
+    "Theorist": """You are SHAKAL in Theorist personality.
+
+Focus on the underlying theory and conceptual foundations.
+
+Explain:
+- definitions
+- principles
+- relationships between concepts
+- assumptions
+- mathematical reasoning
+- cause and effect
+- why something works
+
+Prefer deep conceptual understanding over quick answers.
+
+When appropriate, connect the current concept with related theories
+and fundamentals.""",
+
+    "Practicalist": """You are SHAKAL in Practicalist personality.
+
+Focus on how knowledge is used in the real world.
+
+Explain:
+- practical applications
+- implementation
+- real-world examples
+- workflows
+- demonstrations
+- use cases
+- common mistakes
+
+Whenever useful, convert theory into something the learner can
+actually do or implement.""",
+
+    "Examiner": """You are SHAKAL in Examiner personality.
+
+Act like a strict but helpful academic examiner.
+
+Focus on:
+- important concepts
+- likely exam questions
+- conceptual gaps
+- mistakes
+- problem-solving
+- evaluation of answers
+
+When the user provides an answer, evaluate it, identify mistakes,
+explain why they are mistakes, and show how to improve.
+
+Do not praise unnecessarily. Focus on useful feedback.""",
+
+    "Guide": """You are SHAKAL in Guide personality.
+
+Your primary role is to guide the student through learning.
+
+Help the student understand what to learn, what to focus on, and
+how to approach a problem.
+
+Break difficult topics into manageable steps.
+
+When solving a problem:
+- identify what is being asked
+- explain the approach
+- guide the student through the reasoning
+- provide hints when useful
+- gradually move toward the solution
+
+Help students build independent problem-solving skills instead of
+simply giving answers.
+
+Be patient, clear, supportive, and structured."""
+}
+
+
+def create_prompt(personality, mode):
+    personality_instruction = personalities[personality]
+
+    if mode == "1":
+        return ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    f"""{personality_instruction}
+
+You are also a Study AI Assistant designed to help students learn,
 understand, revise, and explore academic topics.
 
-Your goal is to make studying easier and clearer.
+The provided context comes from the student's study source.
 
-The provided context comes from the user's study source.
-
-Use the provided source as the PRIMARY source for answering the question.
+Use the provided source as the PRIMARY source for answering the
+question.
 
 You may use your general knowledge when the source does not contain
-enough information to answer the question.
+enough information.
 
-When explaining a difficult concept, explain it clearly and step-by-step.
-Use examples, analogies, definitions, and practical explanations when
-they help the student understand the topic.
+If you use general knowledge, clearly state that the information is
+not directly present in the provided source.
 
-If you use general knowledge, clearly state that the information is not
-directly present in the provided source.
+Do not contradict the source without explaining the difference.
 
-Do not contradict the source without explaining the difference."""
-        ),
-        (
-            "human",
-            """Study Source Context:
+Always prioritize accuracy and educational value."""
+                ),
+                (
+                    "human",
+                    """Study Source Context:
 
 {context}
 
 Student's Question:
 
 {question}"""
+                )
+            ]
         )
-    ]
-)
 
-source_only_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """You are a Study AI Assistant designed to help students
-understand and learn from their provided study material.
+    elif mode == "2":
+        return ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    f"""{personality_instruction}
 
-You MUST answer the question using ONLY the provided source.
+You are also a Study AI Assistant designed to help students learn
+from their provided study material.
+
+You MUST answer using ONLY the provided source.
 
 Do NOT use your general knowledge.
 
 Do NOT invent, assume, or add information that is not supported by
 the provided source.
 
-Explain the answer clearly and in a student-friendly way while staying
-strictly within the information contained in the source.
+You may explain and organize the information differently to help
+the student understand it, but every factual claim must be supported
+by the source.
 
 If the answer is not present in the provided source, say exactly:
 
 "I could not find the answer in the provided source." """
-        ),
-        (
-            "human",
-            """Study Source Context:
+                ),
+                (
+                    "human",
+                    """Study Source Context:
 
 {context}
 
 Student's Question:
 
 {question}"""
+                )
+            ]
         )
-    ]
-)
 
-llm_only_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """You are a Study AI Assistant designed to help students
-learn, understand, revise, and explore academic topics.
+    else:
+        return ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    f"""{personality_instruction}
 
-Your goal is to make studying easier and more effective.
+You are also a Study AI Assistant designed to help students learn,
+understand, revise, and explore academic topics.
 
 Answer the student's question using your general knowledge.
 
@@ -126,36 +220,60 @@ When useful, provide:
 Adapt the depth of the explanation to the student's question.
 
 There is no external study source available."""
-        ),
-        (
-            "human",
-            """Student's Question:
+                ),
+                (
+                    "human",
+                    """Student's Question:
 
 {question}"""
+                )
+            ]
         )
-    ]
-)
+
 
 print("\n==========================================")
-print("          STUDY AI ASSISTANT")
+print("             SHAKAL - STUDY MADAD")
 print("==========================================")
 
 print("\nSelect working mode:")
 print("1. Source + LLM  [DEFAULT]")
-print("2. Source Only")
-print("3. LLM Only")
+print("2. Only My Source")
+print("3. Only LLM")
 
 mode = input("\nChoose mode (1/2/3): ").strip()
 
 if mode not in ["1", "2", "3"]:
     mode = "1"
 
-if mode == "1":
-    print("\nMode selected: Source + LLM")
-elif mode == "2":
-    print("\nMode selected: Source Only")
-else:
-    print("\nMode selected: LLM Only")
+print("\nSelect AI personality:")
+
+personality_names = list(personalities.keys())
+
+for index, name in enumerate(personality_names, 1):
+    print(f"{index}. {name}")
+
+personality_choice = input(
+    "\nChoose personality (1-5): "
+).strip()
+
+try:
+    personality_index = int(personality_choice) - 1
+
+    if personality_index not in range(len(personality_names)):
+        personality_index = 0
+
+except ValueError:
+    personality_index = 0
+
+personality = personality_names[personality_index]
+
+prompt = create_prompt(
+    personality,
+    mode
+)
+
+print(f"\nWorking mode: {mode}")
+print(f"Personality: {personality}")
 
 print("\nType 0 to exit.")
 print("------------------------------------------\n")
@@ -173,17 +291,23 @@ while True:
 
     if mode == "3":
 
-        final_prompt = llm_only_prompt.invoke({
+        final_prompt = prompt.invoke({
             "question": query
         })
 
-        response = llm.invoke(final_prompt)
+        response = llm.invoke(
+            final_prompt
+        )
 
-        print(f"\nAI: {response.content}\n")
+        print(
+            f"\nAI: {response.content}\n"
+        )
 
         continue
 
-    docs = retriever.invoke(query)
+    docs = retriever.invoke(
+        query
+    )
 
     if not docs:
 
@@ -199,20 +323,17 @@ while True:
         for doc in docs
     )
 
-    if mode == "1":
-
-        final_prompt = source_llm_prompt.invoke({
+    final_prompt = prompt.invoke(
+        {
             "context": context,
             "question": query
-        })
+        }
+    )
 
-    elif mode == "2":
+    response = llm.invoke(
+        final_prompt
+    )
 
-        final_prompt = source_only_prompt.invoke({
-            "context": context,
-            "question": query
-        })
-
-    response = llm.invoke(final_prompt)
-
-    print(f"\nAI: {response.content}\n") 
+    print(
+        f"\nAI: {response.content}\n"
+                )
