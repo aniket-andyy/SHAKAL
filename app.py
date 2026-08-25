@@ -1,6 +1,7 @@
 import os
 import time
 import tempfile
+import html
 
 import streamlit as st
 
@@ -18,30 +19,29 @@ from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
 
 st.set_page_config(
-    page_title="SHAKAL - STUDY MADAD",
-    page_icon="🧠",
+    page_title="SHAKAL - STUDY MADAD [TERMINAL]",
+    page_icon="▶",
     layout="wide"
 )
 
 # ==========================================
-# AI QUOTES & FACTS (shown while processing)
+# AI QUOTES & FACTS
 # ==========================================
 AI_QUOTES = [
     "“The best way to predict the future is to invent it.” — Alan Kay",
     "“Intelligence is the ability to adapt to change.” — Stephen Hawking",
     "“AI is probably the most important thing humanity has ever worked on.” — Sundar Pichai",
     "“Machine intelligence is the last invention humanity will ever need to make.” — Nick Bostrom",
-    "⚡ Fun fact: The term “Artificial Intelligence” was coined in 1956 at the Dartmouth Conference.",
-    "⚡ Fun fact: The first chatbot, ELIZA, was built at MIT in 1966.",
-    "⚡ Fun fact: Neural networks are inspired by the neurons of the human brain.",
-    "⚡ Fun fact: Over 90% of the world's data was created in just the last few years.",
-    "⚡ Fun fact: RAG (Retrieval-Augmented Generation) is exactly how SHAKAL reads your sources!",
-    "“The question of whether machines can think is like the question of whether submarines can swim.” — Edsger Dijkstra",
-    "⚡ Fun fact: Vector embeddings turn text into numbers so AI can measure meaning like distance.",
+    "⚡ The term 'Artificial Intelligence' was coined in 1956 at Dartmouth.",
+    "⚡ The first chatbot, ELIZA, was built at MIT in 1966.",
+    "⚡ Neural networks are inspired by human brain neurons.",
+    "⚡ Over 90% of the world's data was created in just the last few years.",
+    "⚡ RAG = how SHAKAL reads your sources!",
+    "“Whether machines think is like asking if submarines can swim.” — Dijkstra",
+    "⚡ Vector embeddings turn text into numbers — AI measures meaning like distance.",
     "“Learning is not attained by chance, it must be sought for with ardor.” — Abigail Adams",
 ]
 
-# Rotating fact picker (new fact on every processing, in order)
 if "fact_index" not in st.session_state:
     st.session_state.fact_index = 0
 
@@ -50,146 +50,238 @@ def next_fact():
     st.session_state.fact_index += 1
     return fact
 
-def processing_box(fact=None):
-    fact_html = f'<div class="processing-fact">💡 {fact}</div>' if fact else ""
-    return f"""
-    <div class="processing">
-        <div class="processing-main">Processing</div>
-        <div class="processing-message">[ aniket bhai ki taraf se hello! :) ]</div>
-        {fact_html}
-    </div>
-    """
+# ==========================================
+# ASCII ART LOGO
+# ==========================================
+ASCII_LOGO = """
+<pre class="ascii-logo">
+  ____  _   _    _    _  __    _    _     
+ / ___|| | | |  / \\  | |/ /   / \\  | |    
+ \\___ \\| |_| | / _ \\ | ' /   / _ \\ | |    
+  ___) |  _  |/ ___ \\| . \\  / ___ \\| |___ 
+ |____/|_| |_/_/   \\_\\_|\\_\\/_/   \\_\\_____|
+</pre>
+"""
+
+def ascii_box(content, title=None):
+    """Wrap content in an ASCII box panel."""
+    lines = content.split("\n")
+    if not lines:
+        return ""
+    width = max(len(line) for line in lines if line) + 4
+    width = max(width, 50)
+    top = "╭" + "─" * (width - 2) + "╮"
+    bottom = "╰" + "─" * (width - 2) + "╯"
+    title_line = ""
+    if title:
+        title_line = f"│ ▓ {title.upper()}" + " " * (width - len(title) - 5) + "│\n"
+    body = "\n".join(f"│   {line:<{width - 4}}│" for line in lines)
+    return f"<pre class='ascii-box'>{top}\n{title_line}{body}\n{bottom}</pre>"
 
 # ==========================================
-# MODERN CSS INJECTION
+# TERMINAL CSS
 # ==========================================
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+    /* ===== GLOBAL RESET ===== */
+    html, body, [class*="css"], .stApp {
+        font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+        background: #0a0e0a !important;
+        color: #33ff33 !important;
     }
 
-    #MainMenu, footer, header, .stDeployButton {
-        visibility: hidden;
+    /* CRT Scanlines */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(18, 16, 16, 0) 0px,
+            rgba(18, 16, 16, 0) 2px,
+            rgba(0, 0, 0, 0.15) 3px,
+            rgba(0, 0, 0, 0.15) 3px
+        );
+        pointer-events: none;
+        z-index: 9999;
+    }
+
+    /* Subtle screen flicker */
+    @keyframes flicker {
+        0%, 100% { opacity: 0.98; }
+        50% { opacity: 1; }
+    }
+    .stApp {
+        animation: flicker 4s infinite;
+    }
+
+    /* Hide Streamlit branding */
+    #MainMenu, footer, header, .stDeployButton,
+    button[kind="header"], [data-testid="stHeader"] {
+        visibility: hidden !important;
+        height: 0 !important;
     }
 
     .block-container {
-        max-width: 1100px;
-        padding-top: 4rem;
-        padding-bottom: 4rem;
+        max-width: 1000px;
+        padding: 2rem 1rem 4rem 1rem !important;
     }
 
-    /* ===== RESPONSIVE BRANDING ===== */
-    .brand {
-        font-family: 'Space Grotesk', sans-serif;
+    /* ===== ASCII LOGO ===== */
+    .ascii-logo {
+        font-family: 'Share Tech Mono', 'Courier New', monospace;
+        color: #33ff33;
+        text-shadow:
+            0 0 5px #33ff33,
+            0 0 10px #33ff33,
+            0 0 20px #00ff00;
+        font-size: clamp(9px, 1.4vw, 18px);
+        line-height: 1;
         text-align: center;
-        font-size: clamp(38px, 10vw, 80px);
-        font-weight: 700;
-        letter-spacing: clamp(4px, 1.6vw, 16px);
-        line-height: 1.1;
-        white-space: nowrap;
-        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #667eea 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 8px;
-    }
-
-    .subtitle {
-        font-family: 'Space Grotesk', sans-serif;
-        text-align: center;
-        font-size: clamp(13px, 2.6vw, 20px);
-        font-weight: 500;
-        letter-spacing: clamp(6px, 2.2vw, 18px);
-        margin-left: clamp(6px, 2.2vw, 18px);
-        color: rgba(255, 255, 255, 0.5);
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    .tagline {
-        text-align: center;
-        font-size: 16px;
-        color: rgba(255, 255, 255, 0.6);
-        margin-top: 30px;
-        margin-bottom: 12px;
-    }
-
-    .model {
-        text-align: center;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        color: #4facfe;
+        margin: 20px 0 10px 0;
         letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-top: 8px;
-        opacity: 0.8;
+        white-space: pre;
+        font-weight: 400;
     }
 
-    .developer {
+    .ascii-subtitle {
+        font-family: 'Share Tech Mono', monospace;
+        color: #ffcc00;
+        text-shadow: 0 0 8px #ffcc00;
         text-align: center;
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.4);
-        margin-top: 30px;
-        margin-bottom: 20px;
+        font-size: clamp(12px, 1.6vw, 18px);
+        letter-spacing: 8px;
+        margin: 8px 0;
     }
 
-    .dev-name {
-        color: rgba(255, 255, 255, 0.8);
-        font-weight: 600;
-    }
-
-    .developer a {
-        text-decoration: none;
-        color: #4facfe;
-        transition: all 0.3s ease;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        vertical-align: middle;
-    }
-
-    .developer a:hover {
-        color: #00f2fe;
-        transform: translateY(-1px);
-    }
-
-    /* ===== SECTIONS ===== */
-    .section-title {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: clamp(20px, 4vw, 24px);
-        font-weight: 600;
-        margin-top: 60px;
-        margin-bottom: 12px;
-        padding-left: 16px;
-        border-left: 4px solid;
-        border-image: linear-gradient(to bottom, #00f2fe, #4facfe) 1;
-        color: #ffffff;
-    }
-
-    .section-subtitle {
-        font-size: 15px;
-        color: rgba(255, 255, 255, 0.5);
-        margin-bottom: 28px;
-        margin-left: 16px;
-    }
-
-    .source-note {
-        padding: 16px 20px;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.08);
-        background: rgba(255,255,255,0.02);
-        backdrop-filter: blur(10px);
+    .ascii-tagline {
+        text-align: center;
+        color: #33ff33;
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.7);
-        margin-bottom: 28px;
-        margin-left: 16px;
+        margin: 4px 0 24px 0;
+        opacity: 0.7;
     }
 
-    /* ===== PERSONALITY PILLS — SINGLE CLICK, NO CUT NAMES ===== */
+    .ascii-tagline::before { content: ">> "; color: #ffcc00; }
+    .ascii-tagline::after  { content: " <<"; color: #ffcc00; }
+
+    .ascii-meta {
+        font-family: 'Share Tech Mono', monospace;
+        text-align: center;
+        color: #1a7a1a;
+        font-size: 12px;
+        margin: 4px 0;
+        letter-spacing: 1px;
+    }
+
+    .ascii-meta b { color: #33ff33; }
+    .ascii-meta a { color: #00ffff; text-decoration: none; }
+    .ascii-meta a:hover { color: #33ff33; text-shadow: 0 0 6px #33ff33; }
+
+    /* ===== SECTION HEADINGS (ASCII boxes) ===== */
+    .ascii-section {
+        font-family: 'Share Tech Mono', monospace;
+        color: #ffcc00;
+        text-shadow: 0 0 8px #ffcc00;
+        font-size: clamp(14px, 1.8vw, 18px);
+        font-weight: 400;
+        margin: 40px 0 12px 0;
+        letter-spacing: 2px;
+    }
+
+    .ascii-section::before { content: "╭─ "; color: #ffcc00; }
+    .ascii-section::after  { content: " ────────────────────────────╮"; color: #ffcc00; opacity: 0.5; }
+
+    .ascii-subsection {
+        color: #1a7a1a;
+        font-size: 13px;
+        margin-bottom: 20px;
+        padding-left: 24px;
+    }
+    .ascii-subsection::before { content: "│  "; color: #ffcc00; }
+
+    .ascii-note {
+        color: #ffcc00;
+        font-size: 13px;
+        padding: 10px 16px;
+        border: 1px dashed #ffcc00;
+        border-radius: 2px;
+        margin-bottom: 20px;
+        background: rgba(255, 204, 0, 0.03);
+    }
+    .ascii-note::before { content: "$ "; color: #33ff33; font-weight: 700; }
+
+    /* ===== ASCII BOXES (for source ready, processing, chat) ===== */
+    .ascii-box {
+        font-family: 'Share Tech Mono', monospace;
+        color: #33ff33;
+        font-size: 13px;
+        line-height: 1.4;
+        margin: 12px 0;
+        text-shadow: 0 0 3px #33ff33;
+        white-space: pre;
+        overflow-x: auto;
+    }
+
+    .ascii-box .title { color: #ffcc00; text-shadow: 0 0 6px #ffcc00; }
+    .ascii-box .ok    { color: #00ff00; }
+    .ascii-box .err   { color: #ff3333; text-shadow: 0 0 6px #ff3333; }
+    .ascii-box .dim   { color: #1a7a1a; }
+    .ascii-box .amber { color: #ffcc00; }
+    .ascii-box .cyan  { color: #00ffff; text-shadow: 0 0 5px #00ffff; }
+
+    /* ===== TERMINAL BUTTONS ===== */
+    .stButton > button,
+    button[kind="secondary"] {
+        font-family: 'Share Tech Mono', monospace !important;
+        background: transparent !important;
+        color: #33ff33 !important;
+        border: 1px solid #33ff33 !important;
+        border-radius: 0 !important;
+        padding: 8px 16px !important;
+        font-size: 13px !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase !important;
+        transition: all 0.15s linear !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        font-weight: 400 !important;
+    }
+
+    .stButton > button::before { content: "[ "; color: #ffcc00; }
+    .stButton > button::after  { content: " ]"; color: #ffcc00; }
+
+    .stButton > button:hover {
+        background: #33ff33 !important;
+        color: #0a0e0a !important;
+        box-shadow: 0 0 15px #33ff33, 0 0 30px #00ff00 !important;
+        transform: none !important;
+    }
+
+    .stButton > button:hover::before,
+    .stButton > button:hover::after {
+        color: #0a0e0a !important;
+    }
+
+    /* Primary button = filled amber terminal */
+    .stButton > button[kind="primary"],
+    .stButton > button[data-testid="stBaseButton-primary"],
+    .stButton > button[data-testid="baseButton-primary"] {
+        background: #ffcc00 !important;
+        color: #0a0e0a !important;
+        border: 1px solid #ffcc00 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 0 12px #ffcc00 !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background: #ff9900 !important;
+        box-shadow: 0 0 20px #ff9900, 0 0 40px #ffcc00 !important;
+    }
+
+    /* ===== PERSONALITY PILLS (ASCII style) ===== */
     [data-testid="stRadio"] > label,
     [data-testid="stRadio"] > div > label {
         display: none !important;
@@ -200,244 +292,368 @@ st.markdown(
         flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 10px !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
+        margin-left: 24px !important;
     }
 
     [data-testid="stRadio"] div[role="radiogroup"] label {
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 999px !important;
-        padding: 10px 22px !important;
+        font-family: 'Share Tech Mono', monospace !important;
+        background: transparent !important;
+        color: #33ff33 !important;
+        border: 1px solid #1a7a1a !important;
+        border-radius: 0 !important;
+        padding: 8px 14px !important;
         margin: 0 !important;
-        color: rgba(255, 255, 255, 0.8) !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
+        letter-spacing: 1px !important;
         white-space: nowrap !important;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-        backdrop-filter: blur(8px) !important;
+        transition: all 0.15s linear !important;
         cursor: pointer !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        text-transform: uppercase !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
     }
+
+    [data-testid="stRadio"] div[role="radiogroup"] label::before { content: "[ "; color: #1a7a1a; }
+    [data-testid="stRadio"] div[role="radiogroup"] label::after  { content: " ]"; color: #1a7a1a; }
 
     [data-testid="stRadio"] div[role="radiogroup"] label:hover {
-        border-color: #00f2fe !important;
-        background: rgba(0, 242, 254, 0.08) !important;
-        color: #ffffff !important;
-        box-shadow: 0 0 15px rgba(0, 242, 254, 0.15) !important;
+        border-color: #33ff33 !important;
+        color: #33ff33 !important;
+        text-shadow: 0 0 6px #33ff33 !important;
+        box-shadow: 0 0 12px #33ff33 !important;
+    }
+    [data-testid="stRadio"] div[role="radiogroup"] label:hover::before,
+    [data-testid="stRadio"] div[role="radiogroup"] label:hover::after {
+        color: #33ff33 !important;
     }
 
+    /* Selected personality = filled amber */
+    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
+        background: #ffcc00 !important;
+        color: #0a0e0a !important;
+        border-color: #ffcc00 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 0 15px #ffcc00 !important;
+        text-shadow: none !important;
+    }
+    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked)::before,
+    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked)::after {
+        color: #0a0e0a !important;
+    }
+
+    /* Kill native radio dot */
     [data-testid="stRadio"] div[role="radiogroup"] svg,
     [data-testid="stRadio"] div[role="radiogroup"] input[type="radio"],
     [data-testid="stRadio"] div[role="radiogroup"] [data-baseweb="radio"] {
         display: none !important;
-        width: 0 !important;
-        height: 0 !important;
-        margin: 0 !important;
     }
-
     [data-testid="stRadio"] div[role="radiogroup"] label > div {
-        padding: 0 !important;
-        margin: 0 !important;
+        padding: 0 !important; margin: 0 !important;
     }
 
-    [data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
-        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
-        color: #0b0f19 !important;
-        border-color: transparent !important;
-        font-weight: 700 !important;
-        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25) !important;
+    /* ===== FILE UPLOADER — terminal style ===== */
+    [data-testid="stFileUploader"] {
+        border: 1px dashed #33ff33 !important;
+        background: rgba(51, 255, 51, 0.02) !important;
+        border-radius: 0 !important;
+        color: #33ff33 !important;
+    }
+    [data-testid="stFileUploader"] * {
+        color: #33ff33 !important;
+    }
+    [data-testid="stFileUploaderDropzone"] {
+        border: 1px dashed #33ff33 !important;
+        background: transparent !important;
+        color: #33ff33 !important;
+    }
+    [data-testid="stFileUploader"] button {
+        background: transparent !important;
+        color: #ffcc00 !important;
+        border: 1px solid #ffcc00 !important;
+        border-radius: 0 !important;
+    }
+    [data-testid="stFileUploader"] button:hover {
+        background: #ffcc00 !important;
+        color: #0a0e0a !important;
     }
 
-    /* ===== PROCESSING BOX ===== */
+    /* Text areas */
+    textarea, [data-testid="stTextArea"] textarea {
+        font-family: 'Share Tech Mono', monospace !important;
+        background: #0a0e0a !important;
+        color: #33ff33 !important;
+        border: 1px solid #1a7a1a !important;
+        border-radius: 0 !important;
+        caret-color: #33ff33 !important;
+    }
+    textarea:focus {
+        border-color: #33ff33 !important;
+        box-shadow: 0 0 10px #33ff33 !important;
+    }
+    textarea::placeholder {
+        color: #1a7a1a !important;
+    }
+
+    /* ===== PROCESSING BOX (ASCII terminal) ===== */
     .processing {
-        text-align: center;
-        padding: 24px;
-        border-radius: 16px;
-        border: 1px solid rgba(79, 172, 254, 0.2);
-        background: rgba(79, 172, 254, 0.05);
-        margin: 20px 0;
-        position: relative;
-        overflow: hidden;
+        font-family: 'Share Tech Mono', monospace;
+        color: #33ff33;
+        background: rgba(51, 255, 51, 0.03);
+        border: 1px solid #33ff33;
+        padding: 16px 20px;
+        margin: 16px 0;
+        font-size: 13px;
+        line-height: 1.5;
+        text-shadow: 0 0 4px #33ff33;
+        box-shadow: 0 0 15px rgba(51, 255, 51, 0.2);
     }
 
+    .processing::before {
+        content: "┌──────────────────────────────────────┐";
+        display: block;
+        color: #ffcc00;
+        margin-bottom: 8px;
+    }
     .processing::after {
-        content: "";
-        position: absolute;
-        top: -50%; left: -50%;
-        width: 200%; height: 200%;
-        background: linear-gradient(to bottom right,
-            rgba(255,255,255,0) 0%,
-            rgba(255,255,255,0.05) 50%,
-            rgba(255,255,255,0) 100%);
-        transform: rotate(45deg);
-        animation: shimmer 2.5s infinite;
-    }
-
-    @keyframes shimmer {
-        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        content: "└──────────────────────────────────────┘";
+        display: block;
+        color: #ffcc00;
+        margin-top: 8px;
     }
 
     .processing-main {
-        font-weight: 600;
-        font-size: 18px;
-        color: #4facfe;
-        position: relative;
-        z-index: 1;
+        font-size: 15px;
+        color: #ffcc00;
+        text-shadow: 0 0 8px #ffcc00;
+        font-weight: 700;
+        letter-spacing: 1px;
     }
+    .processing-main::before { content: "▶ "; }
 
     .processing-message {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.4);
-        margin-top: 8px;
-        position: relative;
-        z-index: 1;
+        color: #00ffff;
+        margin-top: 6px;
+        text-shadow: 0 0 4px #00ffff;
     }
+    .processing-message::before { content: "$ "; color: #33ff33; }
 
     .processing-fact {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        font-style: italic;
-        color: #00f2fe;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px dashed rgba(255,255,255,0.15);
-        position: relative;
-        z-index: 1;
+        color: #33ff33;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed #1a7a1a;
+    }
+    .processing-fact::before { content: "ℹ "; color: #ffcc00; }
+
+    /* Blinking cursor for processing */
+    @keyframes blink-cursor {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+    }
+    .processing-main::after {
+        content: "█";
+        animation: blink-cursor 1s infinite;
+        color: #33ff33;
     }
 
-    /* ===== SOURCE READY & CHIPS ===== */
-    .source-ready {
-        padding: 20px 24px;
-        border-radius: 12px;
-        border: 1px solid rgba(0, 242, 254, 0.2);
-        background: rgba(0, 242, 254, 0.03);
-        margin-top: 24px;
-        margin-bottom: 16px;
-        position: relative;
-        overflow: hidden;
+    /* ===== CHAT MESSAGES ===== */
+    .stChatMessage, [data-testid="stChatMessage"] {
+        background: transparent !important;
+        border: 1px solid #1a7a1a !important;
+        border-radius: 0 !important;
+        margin: 12px 0 !important;
+        padding: 12px 16px !important;
     }
 
-    .source-ready::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 2px;
-        background: linear-gradient(90deg, transparent, #00f2fe, transparent);
+    /* User messages */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+        border-color: #00ffff !important;
+        box-shadow: 0 0 8px rgba(0, 255, 255, 0.2) !important;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) p {
+        color: #00ffff !important;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"])::before {
+        content: "┌─ USER ───────────────────────────────────────";
+        display: block;
+        color: #00ffff;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 11px;
+        margin-bottom: 6px;
+        letter-spacing: 1px;
     }
 
-    .source-ready-title {
-        font-weight: 700;
-        font-size: 14px;
-        color: #00f2fe;
-        letter-spacing: 1.5px;
-        display: flex;
-        align-items: center;
+    /* Assistant messages */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
+        border-color: #33ff33 !important;
+        box-shadow: 0 0 8px rgba(51, 255, 51, 0.2) !important;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) p {
+        color: #33ff33 !important;
+        text-shadow: 0 0 2px #33ff33 !important;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])::before {
+        content: "┌─ SHAKAL ─────────────────────────────────────";
+        display: block;
+        color: #33ff33;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 11px;
+        margin-bottom: 6px;
+        letter-spacing: 1px;
+        text-shadow: 0 0 5px #33ff33;
     }
 
-    .source-ready-text {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
-        margin-top: 6px;
+    /* Hide native avatar images, replace with text */
+    [data-testid="chatAvatarIcon-user"] img,
+    [data-testid="chatAvatarIcon-assistant"] img {
+        display: none !important;
+    }
+    [data-testid="chatAvatarIcon-user"]::before {
+        content: "user";
+        color: #00ffff;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 10px;
+    }
+    [data-testid="chatAvatarIcon-assistant"]::before {
+        content: "AI";
+        color: #33ff33;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 10px;
     }
 
+    /* ===== CHAT INPUT (terminal prompt) ===== */
+    .stChatInput, [data-testid="stChatInput"] {
+        background: #0a0e0a !important;
+    }
+
+    .stChatInput textarea,
+    [data-testid="stChatInputTextArea"] {
+        font-family: 'Share Tech Mono', monospace !important;
+        background: #0a0e0a !important;
+        color: #33ff33 !important;
+        border: 1px solid #33ff33 !important;
+        border-radius: 0 !important;
+        padding: 12px 16px !important;
+        caret-color: #33ff33 !important;
+        min-height: 50px !important;
+        line-height: 24px !important;
+    }
+
+    .stChatInput textarea::placeholder,
+    [data-testid="stChatInputTextArea"]::placeholder {
+        color: #1a7a1a !important;
+        font-style: normal !important;
+    }
+
+    .stChatInput textarea:focus,
+    [data-testid="stChatInputTextArea"]:focus {
+        border-color: #ffcc00 !important;
+        box-shadow: 0 0 12px #ffcc00 !important;
+    }
+
+    /* Source chips (ASCII) */
     .source-chip {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 8px 16px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.8);
+        font-family: 'Share Tech Mono', monospace;
+        color: #33ff33;
+        border: 1px solid #1a7a1a;
+        padding: 6px 12px;
+        margin: 4px;
+        display: inline-block;
+        font-size: 12px;
         text-align: center;
         width: 100%;
     }
 
     .personality-info {
         text-align: center;
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.3);
-        margin-top: 20px;
-        font-family: 'JetBrains Mono', monospace;
+        color: #1a7a1a;
+        font-size: 12px;
+        margin-top: 14px;
+        letter-spacing: 1px;
     }
 
-    /* ===== BUTTONS ===== */
-    .stButton > button {
-        font-family: 'Inter', sans-serif;
-        font-weight: 500;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(8px);
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        color: rgba(255, 255, 255, 0.8);
-        padding: 10px 20px;
+    /* Captions & warnings */
+    [data-testid="stCaption"] {
+        color: #1a7a1a !important;
+        font-family: 'Share Tech Mono', monospace !important;
+    }
+    [data-testid="stAlert"] {
+        background: transparent !important;
+        border: 1px solid #ffcc00 !important;
+        border-radius: 0 !important;
+        color: #ffcc00 !important;
+        font-family: 'Share Tech Mono', monospace !important;
+    }
+    [data-testid="stAlert"] * {
+        color: #ffcc00 !important;
     }
 
-    .stButton > button:hover {
-        border-color: #00f2fe;
-        background: rgba(0, 242, 254, 0.08);
-        color: #ffffff;
-        box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
+    /* Progress bar = terminal style */
+    .stProgress > div > div {
+        background: #1a7a1a !important;
+        border-radius: 0 !important;
     }
-
-    .stButton > button[kind="primary"],
-    .stButton > button[data-testid="stBaseButton-primary"],
-    .stButton > button[data-testid="baseButton-primary"] {
-        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
-        color: #0b0f19 !important;
-        border: none !important;
-        font-weight: 700 !important;
-        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
-    }
-
-    .stButton > button[kind="primary"]:hover,
-    .stButton > button[data-testid="stBaseButton-primary"]:hover,
-    .stButton > button[data-testid="baseButton-primary"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4) !important;
-        filter: brightness(1.1);
-    }
-
     .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #00f2fe, #4facfe);
+        background: #33ff33 !important;
+        box-shadow: 0 0 10px #33ff33 !important;
+        border-radius: 0 !important;
     }
 
-    /* ===== CHAT INPUT (centered placeholder) ===== */
-    .stChatInput textarea,
-    [data-testid="stChatInputTextArea"] {
-        border-radius: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        background: rgba(255, 255, 255, 0.03) !important;
-        min-height: 52px !important;
-        line-height: 24px !important;
-        padding: 14px 16px !important;
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0a0e0a; }
+    ::-webkit-scrollbar-thumb { background: #1a7a1a; }
+    ::-webkit-scrollbar-thumb:hover { background: #33ff33; }
+
+    /* Selection */
+    ::selection {
+        background: #33ff33;
+        color: #0a0e0a;
     }
 
-    .stChatInput textarea::placeholder,
-    [data-testid="stChatInputTextArea"]::placeholder {
-        line-height: 24px !important;
-        vertical-align: middle !important;
-    }
+    /* Links */
+    a { color: #00ffff !important; text-decoration: none !important; }
+    a:hover { color: #33ff33 !important; text-shadow: 0 0 8px #33ff33 !important; }
 
-    .stChatInput textarea:focus,
-    [data-testid="stChatInputTextArea"]:focus {
-        border-color: #00f2fe !important;
-        box-shadow: 0 0 0 2px rgba(0, 242, 254, 0.2) !important;
+    /* Source ready ASCII panel */
+    .source-ready {
+        font-family: 'Share Tech Mono', monospace;
+        color: #33ff33;
+        border: 1px solid #00ff00;
+        padding: 14px 20px;
+        margin: 16px 0;
+        background: rgba(0, 255, 0, 0.03);
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
     }
-
-    .stChatMessage, [data-testid="stChatMessage"] {
-        background: rgba(255, 255, 255, 0.02) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 12px !important;
+    .source-ready::before {
+        content: "┌─ SYSTEM STATUS ──────────────────────────────";
+        display: block;
+        color: #00ff00;
+        margin-bottom: 8px;
+        font-size: 11px;
     }
+    .source-ready::after {
+        content: "└──────────────────────────────────────────────";
+        display: block;
+        color: #00ff00;
+        margin-top: 8px;
+        font-size: 11px;
+    }
+    .source-ready-title {
+        color: #00ff00;
+        text-shadow: 0 0 8px #00ff00;
+        font-size: 15px;
+        letter-spacing: 1px;
+        font-weight: 700;
+    }
+    .source-ready-title::before { content: "✓ "; }
+    .source-ready-text {
+        color: #1a7a1a;
+        margin-top: 6px;
+        font-size: 12px;
+    }
+    .source-ready-text::before { content: "> "; color: #33ff33; }
     </style>
     """,
     unsafe_allow_html=True
@@ -456,47 +672,48 @@ if "personality" not in st.session_state:
     st.session_state.personality = "Normal"
 
 # ==========================================
-# HEADER & BRANDING
+# TERMINAL HEADER
 # ==========================================
 st.markdown(
-    """
-    <div class="brand">SHAKAL</div>
-    <div class="subtitle">STUDY MADAD</div>
-    <div class="tagline">Your AI Study Assistant</div>
-    <div class="model">Model · Mistral Small 2506</div>
-    <div class="developer">
-        Developed by <span class="dev-name">Aniket Sharma</span>
-        <br><br>
-        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-            LinkedIn
-        </a>
-        &nbsp;&nbsp;·&nbsp;&nbsp;
-        <a href="https://github.com/aniket-andyy" target="_blank">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-            GitHub
-        </a>
+    f"""
+    {ASCII_LOGO}
+
+    <div class="ascii-subtitle">&gt; S T U D Y &nbsp; M A D A D &lt;</div>
+    <div class="ascii-tagline">Your AI Study Assistant</div>
+
+    <div class="ascii-meta">MODEL: <b>mistral-small-2506</b></div>
+    <div class="ascii-meta">DEV&nbsp; : <b>Aniket Sharma</b></div>
+    <div class="ascii-meta">
+        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418" target="_blank">[LinkedIn]</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/aniket-andyy" target="_blank">[GitHub]</a>
     </div>
     """,
     unsafe_allow_html=True
 )
 
+st.markdown(
+    '<pre style="color:#1a7a1a; text-align:center; margin-top:20px;">'
+    '════════════════════════════════════════════════════════════════════</pre>',
+    unsafe_allow_html=True
+)
+
 # ==========================================
-# UPLOAD SOURCES (ALL TYPES, NO LIMIT)
+# UPLOAD SOURCES
 # ==========================================
-st.markdown('<div class="section-title">Upload Your Sources</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-subtitle">Give SHAKAL your study material.</div>', unsafe_allow_html=True)
-st.markdown('<div class="source-note">📚 Add as many sources as you want — mix & match PDFs, websites, YouTube links and images.</div>', unsafe_allow_html=True)
+st.markdown('<div class="ascii-section">UPLOAD_SOURCES</div>', unsafe_allow_html=True)
+st.markdown('<div class="ascii-subsection">Feed SHAKAL your study material.</div>', unsafe_allow_html=True)
+st.markdown('<div class="ascii-note">add as many sources as you want — mix pdfs, websites, youtube & images.</div>', unsafe_allow_html=True)
 
 col_left, col_right = st.columns(2, gap="medium")
 
 with col_left:
-    pdf_files = st.file_uploader("📄 PDF Files", type=["pdf"], accept_multiple_files=True)
-    website_text = st.text_area("🌐 Website URLs", placeholder="Paste one URL per line...")
+    pdf_files = st.file_uploader("📄 PDF FILES", type=["pdf"], accept_multiple_files=True)
+    website_text = st.text_area("🌐 WEBSITE URLS", placeholder="one url per line...")
 
 with col_right:
-    image_files = st.file_uploader("🖼️ Image Files", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
-    youtube_text = st.text_area("🎥 YouTube URLs", placeholder="Paste one YouTube URL per line...")
+    image_files = st.file_uploader("🖼️ IMAGE FILES", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
+    youtube_text = st.text_area("🎥 YOUTUBE URLS", placeholder="one url per line...")
 
 website_urls = [x.strip() for x in website_text.splitlines() if x.strip()]
 youtube_urls = [x.strip() for x in youtube_text.splitlines() if x.strip()]
@@ -508,33 +725,31 @@ total_sources = (
     + len(image_files or [])
 )
 
-st.caption(f"{total_sources} source{'s' if total_sources != 1 else ''} selected")
+st.caption(f"> {total_sources} source(s) queued")
 
-process_button = st.button("⚡ Process Sources", use_container_width=True, type="primary")
+process_button = st.button("PROCESS_SOURCES", use_container_width=True, type="primary")
 
 if process_button:
     if total_sources == 0:
-        st.warning("Please add at least one source.")
+        st.warning("> no sources detected. add at least one.")
     else:
         all_docs = []
         source_names = []
         progress = st.progress(0)
         status = st.empty()
-
-        # First status shows the hello note, later ones show AI facts
         first_status = {"value": True}
 
         def show_status(main_text):
             if first_status["value"]:
-                extra = '<div class="processing-message"> aniket bhai ki taraf se hello! :) </div>'
+                extra = '<div class="processing-message">aniket bhai ki taraf se hello! :)</div>'
                 first_status["value"] = False
             else:
-                extra = f'<div class="processing-fact">💡 {next_fact()}</div>'
+                extra = f'<div class="processing-fact">{html.escape(next_fact())}</div>'
 
             status.markdown(
                 f"""
                 <div class="processing">
-                    <div class="processing-main">{main_text}</div>
+                    <div class="processing-main">{html.escape(main_text)}</div>
                     {extra}
                 </div>
                 """,
@@ -564,7 +779,7 @@ if process_button:
                     progress.progress(current / total_sources)
 
             for url in website_urls:
-                show_status("Processing website...")
+                show_status("Scraping website...")
                 docs = load_webpage(url)
                 for doc in docs:
                     doc.metadata["source_type"] = "webpage"
@@ -575,7 +790,7 @@ if process_button:
                 progress.progress(current / total_sources)
 
             for url in youtube_urls:
-                show_status("Processing YouTube transcript...")
+                show_status("Extracting YouTube transcript...")
                 docs = load_youtube(url)
                 all_docs.extend(docs)
                 source_names.append("🎥 YouTube")
@@ -584,7 +799,7 @@ if process_button:
 
             if image_files:
                 for file in image_files:
-                    show_status(f"Processing {file.name}...")
+                    show_status(f"Running OCR on {file.name}...")
                     extension = os.path.splitext(file.name)[1]
                     with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temp:
                         temp.write(file.getbuffer())
@@ -602,26 +817,23 @@ if process_button:
                     current += 1
                     progress.progress(current / total_sources)
 
-            show_status("Creating embeddings and updating knowledge base...")
+            show_status("Building vector embeddings...")
             add_to_chroma(all_docs)
             progress.progress(1.0)
-            status.success("Sources ready.")
+            status.success("> sources indexed and ready.")
             st.session_state.sources = source_names
             st.session_state.source_ready = True
 
         except Exception as error:
             status.empty()
-            st.error(f"Unable to process the selected source.\n\n🔍 Debug: {error}")
+            st.error(f"> ERROR: {error}")
 
 if st.session_state.source_ready:
     st.markdown(
         """
         <div class="source-ready">
-            <div class="source-ready-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                SOURCE READY
-            </div>
-            <div class="source-ready-text">Your study material is available to SHAKAL.</div>
+            <div class="source-ready-title">SOURCE READY</div>
+            <div class="source-ready-text">your study material is now available to SHAKAL.</div>
         </div>
         """,
         unsafe_allow_html=True
@@ -631,13 +843,13 @@ if st.session_state.source_ready:
         chip_cols = st.columns(num_sources)
         for col, source in zip(chip_cols, st.session_state.sources):
             with col:
-                st.markdown(f'<div class="source-chip">{source}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="source-chip">{html.escape(source)}</div>', unsafe_allow_html=True)
 
 # ==========================================
-# PERSONALITY SELECTION (SINGLE-CLICK, NO CUT NAMES)
+# PERSONALITY SELECTION
 # ==========================================
-st.markdown('<div class="section-title">Personality</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-subtitle">Choose how SHAKAL should teach you.</div>', unsafe_allow_html=True)
+st.markdown('<div class="ascii-section">PERSONALITY_MODE</div>', unsafe_allow_html=True)
+st.markdown('<div class="ascii-subsection">choose how SHAKAL should teach you.</div>', unsafe_allow_html=True)
 
 personalities = ["Normal", "Theorist", "Practicalist", "Examiner", "Guide"]
 
@@ -651,34 +863,37 @@ selected_personality = st.radio(
 
 st.session_state.personality = selected_personality
 
-st.markdown(f'<div class="personality-info">Active personality · {st.session_state.personality}</div>', unsafe_allow_html=True)
+st.markdown(
+    f'<div class="personality-info">&gt; active_mode: {st.session_state.personality}</div>',
+    unsafe_allow_html=True
+)
 
 # ==========================================
 # STUDY CHAT
 # ==========================================
-st.markdown('<div class="section-title">Study Chat</div>', unsafe_allow_html=True)
+st.markdown('<div class="ascii-section">STUDY_CHAT</div>', unsafe_allow_html=True)
 
 reset_col, status_col = st.columns([1, 4])
 with reset_col:
-    if st.button("Reset Chat", use_container_width=True):
+    if st.button("RESET_CHAT", use_container_width=True):
         st.session_state.chat_history = []
         st.rerun()
 
 with status_col:
-    st.caption(f"Personality: {st.session_state.personality}")
+    st.caption(f"> mode: {st.session_state.personality}")
 
 for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
-query = st.chat_input("Ask SHAKAL anything about your studies...")
+query = st.chat_input("user@shakal:~$ ask anything about your studies...")
 
 PERSONALITY_PROMPTS = {
-    "Normal": """You are SHAKAL, a balanced AI study assistant. Help students and learners understand subjects clearly. Explain concepts accurately and at an appropriate level of detail. Use examples, analogies, step-by-step explanations, and concise summaries when useful. Adapt your teaching style to the user's question. Do not unnecessarily overcomplicate simple questions.""",
-    "Theorist": """You are SHAKAL in Theorist personality. Focus on underlying theory and conceptual foundations. Explain definitions, principles, relationships between concepts, assumptions, mathematical reasoning, cause and effect, and why something works. Prefer deep conceptual understanding over quick answers.""",
-    "Practicalist": """You are SHAKAL in Practicalist personality. Focus on how knowledge is used in the real world. Explain practical applications, implementation, real-world examples, workflows, demonstrations, use cases, and common mistakes. Whenever useful, convert theory into something the learner can actually do or implement.""",
-    "Examiner": """You are SHAKAL in Examiner personality. Act like a strict but helpful academic examiner. Focus on important concepts, likely exam questions, conceptual gaps, mistakes, problem-solving, and evaluation. When the user provides an answer, evaluate it, identify mistakes, explain why they are mistakes, and show how to improve. Do not praise unnecessarily. Focus on useful feedback.""",
-    "Guide": """You are SHAKAL in Guide personality. Act as a study mentor who guides the learner through a topic. Help the student decide what to learn first, what to learn next, what to practice, and how to improve. Break difficult topics into manageable steps. Ask guiding questions when useful. Identify knowledge gaps and suggest the next logical learning step. Your goal is to help the student become capable of solving problems independently rather than simply giving answers."""
+    "Normal": "You are SHAKAL, a balanced AI study assistant. Explain concepts clearly with examples, analogies, and step-by-step reasoning. Adapt to the question.",
+    "Theorist": "You are SHAKAL in Theorist mode. Focus on underlying theory, definitions, principles, relationships, mathematical reasoning, and WHY things work.",
+    "Practicalist": "You are SHAKAL in Practicalist mode. Focus on real-world applications, implementation, workflows, demonstrations, use cases, and common mistakes.",
+    "Examiner": "You are SHAKAL in Examiner mode. Act like a strict academic examiner. Focus on exam questions, conceptual gaps, mistake analysis, and useful feedback. No unnecessary praise.",
+    "Guide": "You are SHAKAL in Guide mode. Act as a Socratic mentor. Break topics into steps, ask guiding questions, build independent problem-solving skills. Don't just give answers."
 }
 
 if query:
@@ -689,19 +904,36 @@ if query:
     with st.chat_message("assistant"):
         processing = st.empty()
 
-        # STEP 1: hello from aniket bhai
-        processing.markdown(processing_box(), unsafe_allow_html=True)
+        # Step 1: just the hello
+        processing.markdown(
+            """
+            <div class="processing">
+                <div class="processing-main">INITIALIZING</div>
+                <div class="processing-message">aniket bhai ki taraf se hello! :)</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         time.sleep(1.5)
 
-        # STEP 2: hello + rotating AI quote / fact
-        processing.markdown(processing_box(next_fact()), unsafe_allow_html=True)
+        # Step 2: add an AI fact
+        processing.markdown(
+            f"""
+            <div class="processing">
+                <div class="processing-main">PROCESSING QUERY</div>
+                <div class="processing-message">aniket bhai ki taraf se hello! :)</div>
+                <div class="processing-fact">{html.escape(next_fact())}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         try:
             llm = ChatMistralAI(model="mistral-small-2506")
             personality_prompt = PERSONALITY_PROMPTS[st.session_state.personality]
 
             if not st.session_state.source_ready:
-                system_prompt = f"""{personality_prompt}\n\nYou are helping a student using your general knowledge. Explain difficult concepts clearly and step-by-step. Use examples, analogies, and practical explanations when useful."""
+                system_prompt = f"{personality_prompt}\n\nUse general knowledge. Explain step-by-step with examples."
                 prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "{question}")])
                 final_prompt = prompt.invoke({"question": query})
             else:
@@ -711,8 +943,8 @@ if query:
                 docs = retriever.invoke(query)
                 context = "\n\n".join(doc.page_content for doc in docs)
 
-                system_prompt = f"""{personality_prompt}\n\nYou are answering using the student's provided study sources. Use the provided source as the PRIMARY source. You may use your general knowledge when the source does not contain enough information. If you use general knowledge, clearly state that the information is not directly present in the provided source. Help the student understand the topic accurately and clearly."""
-                prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "Study Source Context:\n\n{context}\n\nStudent Question:\n\n{question}")])
+                system_prompt = f"{personality_prompt}\n\nUse the student's sources as PRIMARY. If general knowledge is needed, clearly say so."
+                prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "Context:\n{context}\n\nQuestion:\n{question}")])
                 final_prompt = prompt.invoke({"context": context, "question": query})
 
             response = llm.invoke(final_prompt)
@@ -723,4 +955,12 @@ if query:
 
         except Exception as error:
             processing.empty()
-            st.error(f"Sorry, something went wrong while processing your request.\n\n🔍 Debug: {error}")
+            st.error(f"> SYSTEM ERROR: {error}")
+
+st.markdown(
+    '<pre style="color:#1a7a1a; text-align:center; margin-top:40px; font-size:11px;">'
+    '════════════════════════════════════════════════════════════════════<br>'
+    '> EOF &nbsp;|&nbsp; connection terminated &nbsp;|&nbsp; SHAKAL v1.0<br>'
+    '════════════════════════════════════════════════════════════════════</pre>',
+    unsafe_allow_html=True
+    )
