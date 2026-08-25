@@ -51,14 +51,28 @@ def next_fact():
     return fact
 
 # ==========================================
-# ASCII LOGO (flush-left, no indentation!)
+# ASCII LOGO — built with <br> + &nbsp; so
+# markdown can NEVER collapse or wrap it
 # ==========================================
-ASCII_LOGO = """<pre class="ascii-logo">  ____  _   _    _    _  __    _    _
- / ___|| | | |  / \\  | |/ /   / \\  | |
- \\___ \\| |_| | / _ \\ | ' /   / _ \\ | |
-  ___) |  _  |/ ___ \\| . \\  / ___ \\| |___
- |____/|_| |_/_/   \\_\\_|\\_\\/_/   \\_\\_____|
-</pre>"""
+LOGO_LINES = [
+    "  ____  _   _    _    _  __    _    _",
+    " / ___|| | | |  / \\  | |/ /   / \\  | |",
+    " \\___ \\| |_| | / _ \\ | ' /   / _ \\ | |",
+    "  ___) |  _  |/ ___ \\| . \\  / ___ \\| |___",
+    " |____/|_| |_/_/   \\_\\_|\\_\\/_/   \\_\\_____|",
+]
+
+ASCII_LOGO = (
+    '<div class="ascii-logo">'
+    + "<br>".join(line.replace(" ", "&nbsp;") for line in LOGO_LINES)
+    + "</div>"
+)
+
+ASCII_HR = (
+    '<div class="ascii-hr">'
+    + "═" * 60
+    + "</div>"
+)
 
 # ==========================================
 # TERMINAL CSS
@@ -99,18 +113,16 @@ html, body, [class*="css"], .stApp {
     padding: 2rem 1rem 4rem 1rem !important;
 }
 
-pre { background: transparent !important; }
-
-/* ===== LOGO ===== */
+/* ===== LOGO (nowrap + &nbsp; = unbreakable) ===== */
 .ascii-logo {
     font-family: 'Share Tech Mono', monospace;
     color: #33ff33;
     text-shadow: 0 0 5px #33ff33, 0 0 10px #33ff33, 0 0 20px #00ff00;
-    font-size: clamp(7px, 2.2vw, 16px);
-    line-height: 1.15;
+    font-size: clamp(8px, 3.1vw, 18px);
+    line-height: 1.25;
     text-align: center;
-    margin: 20px 0 10px 0;
-    white-space: pre;
+    margin: 24px 0 10px 0;
+    white-space: nowrap;
     overflow-x: hidden;
 }
 
@@ -120,8 +132,10 @@ pre { background: transparent !important; }
     text-shadow: 0 0 8px #ffcc00;
     text-align: center;
     font-size: clamp(12px, 1.6vw, 18px);
-    letter-spacing: 8px;
+    letter-spacing: clamp(3px, 1.6vw, 8px);
     margin: 8px 0;
+    white-space: nowrap;
+    overflow-x: hidden;
 }
 
 .ascii-tagline {
@@ -147,10 +161,11 @@ pre { background: transparent !important; }
 .ascii-hr {
     color: #1a7a1a;
     text-align: center;
-    font-size: 12px;
-    overflow: hidden;
-    margin: 20px 0;
+    font-size: 10px;
+    margin: 18px 0;
     white-space: nowrap;
+    overflow-x: hidden;
+    line-height: 1.4;
 }
 
 /* ===== SECTIONS ===== */
@@ -183,7 +198,7 @@ pre { background: transparent !important; }
 }
 .ascii-note::before { content: "$ "; color: #33ff33; font-weight: 700; }
 
-/* ===== BUTTONS (brackets are literal in labels now) ===== */
+/* ===== BUTTONS ===== */
 .stButton > button {
     font-family: 'Share Tech Mono', monospace !important;
     background: transparent !important;
@@ -221,7 +236,7 @@ pre { background: transparent !important; }
     box-shadow: 0 0 20px #ff9900 !important;
 }
 
-/* ===== PERSONALITY PILLS (scoped ONLY to radiogroup options) ===== */
+/* ===== PERSONALITY PILLS ===== */
 [data-testid="stRadio"] [role="radiogroup"] {
     display: flex !important;
     flex-direction: row !important;
@@ -274,7 +289,7 @@ pre { background: transparent !important; }
     color: #0a0e0a !important;
 }
 
-/* Hide only the radio DOT, never the label */
+/* Hide only the radio DOT */
 [data-testid="stRadio"] [role="radiogroup"] svg,
 [data-testid="stRadio"] [role="radiogroup"] input[type="radio"],
 [data-testid="stRadio"] [role="radiogroup"] [data-baseweb="radio"] {
@@ -350,7 +365,7 @@ textarea::placeholder { color: #1a7a1a !important; }
     padding: 12px 16px !important;
 }
 [data-testid="stChatMessage"] p { color: #33ff33 !important; }
-[data-testid="stChatMessage"] pre { background: #0f140f !important; color: #33ff33 !important; }
+[data-testid="stChatMessage"] pre { background: #0f140f !important; color: #33ff33 !important; white-space: pre-wrap !important; }
 
 .stChatInput textarea, [data-testid="stChatInputTextArea"] {
     font-family: 'Share Tech Mono', monospace !important;
@@ -447,7 +462,7 @@ if "personality" not in st.session_state:
     st.session_state.personality = "Normal"
 
 # ==========================================
-# HEADER (flush-left HTML!)
+# HEADER
 # ==========================================
 st.markdown(ASCII_LOGO, unsafe_allow_html=True)
 
@@ -459,7 +474,7 @@ st.markdown("""
 <div class="ascii-meta"><a href="https://www.linkedin.com/in/aniket-sharma-42a700418" target="_blank">[LinkedIn]</a> &nbsp;·&nbsp; <a href="https://github.com/aniket-andyy" target="_blank">[GitHub]</a></div>
 """, unsafe_allow_html=True)
 
-st.markdown('<pre class="ascii-hr">════════════════════════════════════════════════════════════</pre>', unsafe_allow_html=True)
+st.markdown(ASCII_HR, unsafe_allow_html=True)
 
 # ==========================================
 # UPLOAD SOURCES
@@ -707,8 +722,5 @@ if query:
             processing.empty()
             st.error(f"> SYSTEM ERROR: {error}")
 
-st.markdown(
-    '<pre class="ascii-hr">════════════════════════════════════════════════════════════</pre>'
-    '<div class="personality-info">&gt; EOF &nbsp;|&nbsp; connection terminated &nbsp;|&nbsp; SHAKAL v1.0</div>',
-    unsafe_allow_html=True
-            )
+st.markdown(ASCII_HR, unsafe_allow_html=True)
+st.markdown('<div class="personality-info">&gt; EOF &nbsp;|&nbsp; connection terminated &nbsp;|&nbsp; SHAKAL v1.0</div>', unsafe_allow_html=True)
