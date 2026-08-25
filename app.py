@@ -16,140 +16,336 @@ from langchain_community.vectorstores import Chroma
 from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
 
-
 st.set_page_config(
     page_title="SHAKAL - STUDY MADAD",
     page_icon="🧠",
     layout="wide"
 )
 
+# ==========================================
+# MODERN CSS INJECTION
+# ==========================================
 st.markdown(
     """
     <style>
-    #MainMenu, footer, header {
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    /* Base Styles */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Hide Streamlit Branding */
+    #MainMenu, footer, header, .stDeployButton {
         visibility: hidden;
     }
 
     .block-container {
-        max-width: 1000px;
-        padding-top: 3rem;
+        max-width: 1100px;
+        padding-top: 4rem;
         padding-bottom: 4rem;
     }
 
+    /* Typography & Branding */
     .brand {
+        font-family: 'Space Grotesk', sans-serif;
         text-align: center;
-        font-size: 56px;
-        font-weight: 900;
-        letter-spacing: 8px;
+        font-size: 80px;
+        font-weight: 700;
+        letter-spacing: 16px;
         line-height: 1;
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #667eea 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+        text-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
     }
 
     .subtitle {
+        font-family: 'Space Grotesk', sans-serif;
         text-align: center;
         font-size: 20px;
-        font-weight: 600;
-        letter-spacing: 7px;
-        opacity: 0.65;
-        margin-top: 8px;
+        font-weight: 500;
+        letter-spacing: 18px;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        margin-left: 18px;
     }
 
     .tagline {
         text-align: center;
-        font-size: 15px;
-        opacity: 0.6;
-        margin-top: 20px;
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 30px;
+        margin-bottom: 12px;
+        font-weight: 400;
     }
 
     .model {
         text-align: center;
-        font-size: 13px;
-        opacity: 0.45;
-        margin-top: 7px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: #4facfe;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-top: 8px;
+        opacity: 0.8;
     }
 
     .developer {
         text-align: center;
         font-size: 13px;
-        opacity: 0.55;
-        margin-top: 14px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 30px;
+        margin-bottom: 20px;
+    }
+
+    .dev-name {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 600;
     }
 
     .developer a {
         text-decoration: none;
+        color: #4facfe;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        vertical-align: middle;
     }
 
+    .developer a:hover {
+        color: #00f2fe;
+        transform: translateY(-1px);
+    }
+
+    /* Section Styling */
     .section-title {
-        font-size: 23px;
-        font-weight: 750;
-        margin-top: 45px;
-        margin-bottom: 5px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 24px;
+        font-weight: 600;
+        margin-top: 60px;
+        margin-bottom: 12px;
+        padding-left: 16px;
+        border-left: 4px solid;
+        border-image: linear-gradient(to bottom, #00f2fe, #4facfe) 1;
+        color: #ffffff;
     }
 
     .section-subtitle {
-        font-size: 14px;
-        opacity: 0.55;
-        margin-bottom: 20px;
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 28px;
+        margin-left: 16px;
+        font-weight: 400;
     }
 
+    /* Containers & Cards */
     .source-note {
-        padding: 12px 16px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.10);
-        background: rgba(255,255,255,0.025);
-        font-size: 13px;
-        opacity: 0.7;
-        margin-bottom: 18px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.02);
+        backdrop-filter: blur(10px);
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 28px;
+        margin-left: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     .processing {
         text-align: center;
-        padding: 18px;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.10);
-        margin: 15px 0;
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(79, 172, 254, 0.2);
+        background: rgba(79, 172, 254, 0.05);
+        margin: 20px 0;
+        box-shadow: 0 0 20px rgba(0, 242, 254, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .processing::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+            to bottom right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: rotate(45deg);
+        animation: shimmer 2.5s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
     }
 
     .processing-main {
-        font-weight: 700;
-        font-size: 16px;
+        font-weight: 600;
+        font-size: 18px;
+        color: #4facfe;
+        letter-spacing: 0.5px;
+        position: relative;
+        z-index: 1;
     }
 
     .processing-message {
+        font-family: 'JetBrains Mono', monospace;
         font-size: 12px;
-        opacity: 0.5;
-        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 8px;
+        position: relative;
+        z-index: 1;
     }
 
     .source-ready {
-        padding: 14px 17px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.10);
-        margin-top: 15px;
+        padding: 20px 24px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 242, 254, 0.2);
+        background: rgba(0, 242, 254, 0.03);
+        margin-top: 24px;
+        margin-bottom: 16px;
+        margin-left: 16px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .source-ready::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #00f2fe, transparent);
     }
 
     .source-ready-title {
         font-weight: 700;
-        font-size: 13px;
+        font-size: 14px;
+        color: #00f2fe;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
     }
 
     .source-ready-text {
-        font-size: 12px;
-        opacity: 0.55;
-        margin-top: 4px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 6px;
+    }
+
+    .source-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        text-align: center;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .source-chip:hover {
+        border-color: #4facfe;
+        background: rgba(79, 172, 254, 0.08);
     }
 
     .personality-info {
         text-align: center;
         font-size: 13px;
-        opacity: 0.5;
-        margin-top: 10px;
+        color: rgba(255, 255, 255, 0.3);
+        margin-top: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 0.5px;
     }
+
+    /* Modern Button Overrides */
+    .stButton > button {
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(8px);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        color: rgba(255, 255, 255, 0.8);
+        padding: 10px 20px;
+    }
+
+    .stButton > button:hover {
+        border-color: #00f2fe;
+        background: rgba(0, 242, 254, 0.08);
+        color: #ffffff;
+        box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
+    }
+
+    /* Primary Buttons */
+    .stButton > button[kind="primary"],
+    .stButton > button[data-testid="stBaseButton-primary"],
+    .stButton > button[data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
+        color: #0b0f19 !important;
+        border: none !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+    }
+
+    .stButton > button[kind="primary"]:hover,
+    .stButton > button[data-testid="stBaseButton-primary"]:hover,
+    .stButton > button[data-testid="baseButton-primary"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4) !important;
+        filter: brightness(1.1);
+    }
+
+    /* Progress Bar Styling */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #00f2fe, #4facfe);
+    }
+
+    /* Chat Input Styling */
+    .stChatInput textarea {
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+    }
+    .stChatInput textarea:focus {
+        border-color: #00f2fe !important;
+        box-shadow: 0 0 0 2px rgba(0, 242, 254, 0.2) !important;
+    }
+
+    /* Chat messages */
+    .stChatMessage {
+        background: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 12px !important;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
 )
 
-
+# ==========================================
+# STATE INITIALIZATION
+# ==========================================
 if "sources" not in st.session_state:
     st.session_state.sources = []
 
@@ -162,29 +358,28 @@ if "chat_history" not in st.session_state:
 if "personality" not in st.session_state:
     st.session_state.personality = "Normal"
 
+if "source_type" not in st.session_state:
+    st.session_state.source_type = "📄 PDF"
 
+# ==========================================
+# HEADER & BRANDING
+# ==========================================
 st.markdown(
     """
     <div class="brand">SHAKAL</div>
-
     <div class="subtitle">STUDY MADAD</div>
-
-    <div class="tagline">
-        Your AI Study Assistant
-    </div>
-
-    <div class="model">
-        Model · Mistral Small 2506
-    </div>
-
+    <div class="tagline">Your AI Study Assistant</div>
+    <div class="model">Model · Mistral Small 2506</div>
     <div class="developer">
-        Developed by Aniket Sharma
+        Developed by <span class="dev-name">Aniket Sharma</span>
         <br><br>
-        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank">
+        <a href="https://www.linkedin.com/in/aniket-sharma-42a700418?utm_source=share_via&utm_content=member_android" target="_blank" class="social-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
             LinkedIn
         </a>
         &nbsp;&nbsp;·&nbsp;&nbsp;
-        <a href="https://github.com/aniket-andyy" target="_blank">
+        <a href="https://github.com/aniket-andyy" target="_blank" class="social-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
             GitHub
         </a>
     </div>
@@ -192,274 +387,139 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# ==========================================
+# UPLOAD SOURCES
+# ==========================================
+st.markdown('<div class="section-title">Upload Your Sources</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-subtitle">Give SHAKAL your study material.</div>', unsafe_allow_html=True)
+st.markdown('<div class="source-note">You can add up to <b>3 sources</b> at a time.</div>', unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="section-title">Upload Your Sources</div>',
-    unsafe_allow_html=True
-)
+# Modern Segmented Control for Source Types
+cols = st.columns(4)
+source_types = ["📄 PDF", "🌐 Website", "🎥 YouTube", "🖼️ Image"]
 
-st.markdown(
-    '<div class="section-subtitle">'
-    'Give SHAKAL your study material.'
-    '</div>',
-    unsafe_allow_html=True
-)
+for col, stype in zip(cols, source_types):
+    if col.button(
+        stype, 
+        use_container_width=True, 
+        type="primary" if st.session_state.source_type == stype else "secondary"
+    ):
+        st.session_state.source_type = stype
+        st.rerun()
 
-st.markdown(
-    '<div class="source-note">'
-    'You can add up to <b>3 sources</b> at a time.'
-    '</div>',
-    unsafe_allow_html=True
-)
-
-
-source_type = st.radio(
-    "Source type",
-    [
-        "📄 PDF",
-        "🌐 Website",
-        "🎥 YouTube",
-        "🖼️ Image"
-    ],
-    horizontal=True,
-    label_visibility="collapsed"
-)
-
+source_type = st.session_state.source_type
 
 pdf_files = []
 website_urls = []
 youtube_urls = []
 image_files = []
 
-
 if source_type == "📄 PDF":
-
-    pdf_files = st.file_uploader(
-        "Upload PDF",
-        type=["pdf"],
-        accept_multiple_files=True
-    )
-
+    pdf_files = st.file_uploader("Upload PDF", type=["pdf"], accept_multiple_files=True)
 elif source_type == "🌐 Website":
-
-    website_text = st.text_area(
-        "Website URLs",
-        placeholder="Paste one URL per line..."
-    )
-
-    website_urls = [
-        x.strip()
-        for x in website_text.splitlines()
-        if x.strip()
-    ]
-
+    website_text = st.text_area("Website URLs", placeholder="Paste one URL per line...")
+    website_urls = [x.strip() for x in website_text.splitlines() if x.strip()]
 elif source_type == "🎥 YouTube":
-
-    youtube_text = st.text_area(
-        "YouTube URLs",
-        placeholder="Paste one YouTube URL per line..."
-    )
-
-    youtube_urls = [
-        x.strip()
-        for x in youtube_text.splitlines()
-        if x.strip()
-    ]
-
+    youtube_text = st.text_area("YouTube URLs", placeholder="Paste one YouTube URL per line...")
+    youtube_urls = [x.strip() for x in youtube_text.splitlines() if x.strip()]
 else:
+    image_files = st.file_uploader("Upload images", type=["png", "jpg", "jpeg", "webp"], accept_multiple_files=True)
 
-    image_files = st.file_uploader(
-        "Upload images",
-        type=["png", "jpg", "jpeg", "webp"],
-        accept_multiple_files=True
-    )
-
-
-total_sources = (
-    len(pdf_files or [])
-    + len(website_urls)
-    + len(youtube_urls)
-    + len(image_files or [])
-)
-
-
+total_sources = (len(pdf_files or []) + len(website_urls) + len(youtube_urls) + len(image_files or []))
 st.caption(f"{total_sources}/3 sources selected")
 
-
-process_button = st.button(
-    "Process Sources",
-    use_container_width=True,
-    type="primary"
-)
-
+process_button = st.button("Process Sources", use_container_width=True, type="primary")
 
 if process_button:
-
     if total_sources == 0:
-
         st.warning("Please add at least one source.")
-
     elif total_sources > 3:
-
         st.error("Maximum 3 sources can be processed at a time.")
-
     else:
-
         all_docs = []
         source_names = []
-
         progress = st.progress(0)
         status = st.empty()
 
         try:
-
             current = 0
 
             if pdf_files:
-
                 for file in pdf_files:
-
-                    status.info(
-                        f"Processing {file.name}..."
-                    )
-
-                    with tempfile.NamedTemporaryFile(
-                        delete=False,
-                        suffix=".pdf"
-                    ) as temp:
-
+                    status.info(f"Processing {file.name}...")
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp:
                         temp.write(file.getbuffer())
                         temp_path = temp.name
-
                     try:
-
                         docs = load_pdf(temp_path)
-
                         for doc in docs:
                             doc.metadata["source_type"] = "pdf"
                             doc.metadata["source"] = file.name
-
                         all_docs.extend(docs)
-                        source_names.append(
-                            f"📄 {file.name}"
-                        )
-
+                        source_names.append(f"📄 {file.name}")
                     finally:
-
                         if os.path.exists(temp_path):
                             os.remove(temp_path)
-
                     current += 1
                     progress.progress(current / total_sources)
 
             for url in website_urls:
-
-                status.info(
-                    f"Processing website..."
-                )
-
+                status.info("Processing website...")
                 docs = load_webpage(url)
-
                 for doc in docs:
                     doc.metadata["source_type"] = "webpage"
                     doc.metadata["source"] = url
-
                 all_docs.extend(docs)
-                source_names.append(
-                    f"🌐 {url}"
-                )
-
+                source_names.append(f"🌐 {url}")
                 current += 1
                 progress.progress(current / total_sources)
 
             for url in youtube_urls:
-
-                status.info(
-                    "Processing YouTube transcript..."
-                )
-
+                status.info("Processing YouTube transcript...")
                 docs = load_youtube(url)
-
                 all_docs.extend(docs)
-                source_names.append(
-                    f"🎥 YouTube"
-                )
-
+                source_names.append(f"🎥 YouTube")
                 current += 1
                 progress.progress(current / total_sources)
 
             if image_files:
-
                 for file in image_files:
-
-                    status.info(
-                        f"Processing {file.name}..."
-                    )
-
-                    extension = os.path.splitext(
-                        file.name
-                    )[1]
-
-                    with tempfile.NamedTemporaryFile(
-                        delete=False,
-                        suffix=extension
-                    ) as temp:
-
+                    status.info(f"Processing {file.name}...")
+                    extension = os.path.splitext(file.name)[1]
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temp:
                         temp.write(file.getbuffer())
                         temp_path = temp.name
-
                     try:
-
                         docs = load_image(temp_path)
-
                         for doc in docs:
                             doc.metadata["source_type"] = "image"
                             doc.metadata["source"] = file.name
-
                         all_docs.extend(docs)
-                        source_names.append(
-                            f"🖼️ {file.name}"
-                        )
-
+                        source_names.append(f"🖼️ {file.name}")
                     finally:
-
                         if os.path.exists(temp_path):
                             os.remove(temp_path)
-
                     current += 1
                     progress.progress(current / total_sources)
 
-            status.info(
-                "Creating embeddings and updating knowledge base..."
-            )
-
+            status.info("Creating embeddings and updating knowledge base...")
             add_to_chroma(all_docs)
-
             progress.progress(1.0)
-
-            status.success(
-                "Sources ready."
-            )
-
+            status.success("Sources ready.")
             st.session_state.sources = source_names
             st.session_state.source_ready = True
 
         except Exception:
-
             status.empty()
-
-            st.error(
-                "Unable to process the selected source."
-            )
-
+            st.error("Unable to process the selected source.")
 
 if st.session_state.source_ready:
-
     st.markdown(
         """
         <div class="source-ready">
             <div class="source-ready-title">
-                ✓ SOURCE READY
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                SOURCE READY
             </div>
             <div class="source-ready-text">
                 Your study material is available to SHAKAL.
@@ -468,331 +528,107 @@ if st.session_state.source_ready:
         """,
         unsafe_allow_html=True
     )
+    
+    # Source Chips
+    num_sources = len(st.session_state.sources)
+    if num_sources > 0:
+        chip_cols = st.columns(num_sources)
+        for col, source in zip(chip_cols, st.session_state.sources):
+            with col:
+                st.markdown(f'<div class="source-chip">{source}</div>', unsafe_allow_html=True)
 
-    for source in st.session_state.sources:
-        st.caption(source)
-
-
-st.markdown(
-    '<div class="section-title">Personality</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="section-subtitle">'
-    'Choose how SHAKAL should teach you.'
-    '</div>',
-    unsafe_allow_html=True
-)
-
+# ==========================================
+# PERSONALITY SELECTION
+# ==========================================
+st.markdown('<div class="section-title">Personality</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-subtitle">Choose how SHAKAL should teach you.</div>', unsafe_allow_html=True)
 
 personality_columns = st.columns(5)
+personalities = ["Normal", "Theorist", "Practicalist", "Examiner", "Guide"]
 
-personalities = [
-    "Normal",
-    "Theorist",
-    "Practicalist",
-    "Examiner",
-    "Guide"
-]
-
-
-for column, personality in zip(
-    personality_columns,
-    personalities
-):
-
+for column, personality in zip(personality_columns, personalities):
     with column:
-
         if st.button(
             personality,
             use_container_width=True,
-            type=(
-                "primary"
-                if st.session_state.personality == personality
-                else "secondary"
-            ),
+            type="primary" if st.session_state.personality == personality else "secondary",
             key=f"personality_{personality}"
         ):
-
             st.session_state.personality = personality
             st.rerun()
 
+st.markdown(f'<div class="personality-info">Active personality · {st.session_state.personality}</div>', unsafe_allow_html=True)
 
-st.markdown(
-    f"""
-    <div class="personality-info">
-        Active personality · {st.session_state.personality}
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-
-st.markdown(
-    '<div class="section-title">Study Chat</div>',
-    unsafe_allow_html=True
-)
-
+# ==========================================
+# STUDY CHAT
+# ==========================================
+st.markdown('<div class="section-title">Study Chat</div>', unsafe_allow_html=True)
 
 reset_col, status_col = st.columns([1, 4])
-
 with reset_col:
-
-    if st.button(
-        "Reset Chat",
-        use_container_width=True
-    ):
-
+    if st.button("Reset Chat", use_container_width=True):
         st.session_state.chat_history = []
         st.rerun()
 
-
 with status_col:
-
-    st.caption(
-        f"Personality: {st.session_state.personality}"
-    )
-
+    st.caption(f"Personality: {st.session_state.personality}")
 
 for message in st.session_state.chat_history:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
 
-    with st.chat_message(
-        message["role"]
-    ):
-
-        st.write(
-            message["content"]
-        )
-
-
-query = st.chat_input(
-    "Ask SHAKAL anything about your studies..."
-)
-
+query = st.chat_input("Ask SHAKAL anything about your studies...")
 
 PERSONALITY_PROMPTS = {
-
-    "Normal": """
-You are SHAKAL, a balanced AI study assistant.
-
-Help students and learners understand subjects clearly.
-
-Explain concepts accurately and at an appropriate level of detail.
-Use examples, analogies, step-by-step explanations, and concise
-summaries when useful.
-
-Adapt your teaching style to the user's question.
-Do not unnecessarily overcomplicate simple questions.
-""",
-
-    "Theorist": """
-You are SHAKAL in Theorist personality.
-
-Focus on underlying theory and conceptual foundations.
-
-Explain definitions, principles, relationships between concepts,
-assumptions, mathematical reasoning, cause and effect, and why
-something works.
-
-Prefer deep conceptual understanding over quick answers.
-""",
-
-    "Practicalist": """
-You are SHAKAL in Practicalist personality.
-
-Focus on how knowledge is used in the real world.
-
-Explain practical applications, implementation, real-world examples,
-workflows, demonstrations, use cases, and common mistakes.
-
-Whenever useful, convert theory into something the learner can
-actually do or implement.
-""",
-
-    "Examiner": """
-You are SHAKAL in Examiner personality.
-
-Act like a strict but helpful academic examiner.
-
-Focus on important concepts, likely exam questions, conceptual gaps,
-mistakes, problem-solving, and evaluation.
-
-When the user provides an answer, evaluate it, identify mistakes,
-explain why they are mistakes, and show how to improve.
-
-Do not praise unnecessarily. Focus on useful feedback.
-""",
-
-    "Guide": """
-You are SHAKAL in Guide personality.
-
-Act as a study mentor who guides the learner through a topic.
-
-Help the student decide what to learn first, what to learn next,
-what to practice, and how to improve.
-
-Break difficult topics into manageable steps.
-Ask guiding questions when useful.
-Identify knowledge gaps and suggest the next logical learning step.
-
-Your goal is to help the student become capable of solving problems
-independently rather than simply giving answers.
-"""
+    "Normal": """You are SHAKAL, a balanced AI study assistant. Help students and learners understand subjects clearly. Explain concepts accurately and at an appropriate level of detail. Use examples, analogies, step-by-step explanations, and concise summaries when useful. Adapt your teaching style to the user's question. Do not unnecessarily overcomplicate simple questions.""",
+    "Theorist": """You are SHAKAL in Theorist personality. Focus on underlying theory and conceptual foundations. Explain definitions, principles, relationships between concepts, assumptions, mathematical reasoning, cause and effect, and why something works. Prefer deep conceptual understanding over quick answers.""",
+    "Practicalist": """You are SHAKAL in Practicalist personality. Focus on how knowledge is used in the real world. Explain practical applications, implementation, real-world examples, workflows, demonstrations, use cases, and common mistakes. Whenever useful, convert theory into something the learner can actually do or implement.""",
+    "Examiner": """You are SHAKAL in Examiner personality. Act like a strict but helpful academic examiner. Focus on important concepts, likely exam questions, conceptual gaps, mistakes, problem-solving, and evaluation. When the user provides an answer, evaluate it, identify mistakes, explain why they are mistakes, and show how to improve. Do not praise unnecessarily. Focus on useful feedback.""",
+    "Guide": """You are SHAKAL in Guide personality. Act as a study mentor who guides the learner through a topic. Help the student decide what to learn first, what to learn next, what to practice, and how to improve. Break difficult topics into manageable steps. Ask guiding questions when useful. Identify knowledge gaps and suggest the next logical learning step. Your goal is to help the student become capable of solving problems independently rather than simply giving answers."""
 }
 
-
 if query:
-
-    st.session_state.chat_history.append(
-        {
-            "role": "user",
-            "content": query
-        }
-    )
-
+    st.session_state.chat_history.append({"role": "user", "content": query})
     with st.chat_message("user"):
         st.write(query)
 
     with st.chat_message("assistant"):
-
         processing = st.empty()
-
         processing.markdown(
             """
             <div class="processing">
-                <div class="processing-main">
-                    Processing
-                </div>
-                <div class="processing-message">
-                    [ aniket bhai ki taraf se hello! :) ]
-                </div>
+                <div class="processing-main">Processing</div>
+                <div class="processing-message">[ aniket bhai ki taraf se hello! :) ]</div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
         try:
-
-            llm = ChatMistralAI(
-                model="mistral-small-2506"
-            )
-
-            personality_prompt = PERSONALITY_PROMPTS[
-                st.session_state.personality
-            ]
+            llm = ChatMistralAI(model="mistral-small-2506")
+            personality_prompt = PERSONALITY_PROMPTS[st.session_state.personality]
 
             if not st.session_state.source_ready:
-
-                system_prompt = f"""
-{personality_prompt}
-
-You are helping a student using your general knowledge.
-
-Explain difficult concepts clearly and step-by-step.
-Use examples, analogies, and practical explanations when useful.
-"""
-
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        ("system", system_prompt),
-                        ("human", "{question}")
-                    ]
-                )
-
-                final_prompt = prompt.invoke(
-                    {"question": query}
-                )
-
+                system_prompt = f"""{personality_prompt}\n\nYou are helping a student using your general knowledge. Explain difficult concepts clearly and step-by-step. Use examples, analogies, and practical explanations when useful."""
+                prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "{question}")])
+                final_prompt = prompt.invoke({"question": query})
             else:
-
-                embedding_model = HuggingFaceEmbeddings(
-                    model_name="sentence-transformers/all-MiniLM-L6-v2"
-                )
-
-                vectorstore = Chroma(
-                    persist_directory="chroma_db",
-                    embedding_function=embedding_model
-                )
-
-                retriever = vectorstore.as_retriever(
-                    search_type="mmr",
-                    search_kwargs={
-                        "k": 4,
-                        "fetch_k": 10,
-                        "lambda_mult": 0.5
-                    }
-                )
-
+                embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+                vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embedding_model)
+                retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 4, "fetch_k": 10, "lambda_mult": 0.5})
                 docs = retriever.invoke(query)
+                context = "\n\n".join(doc.page_content for doc in docs)
+                
+                system_prompt = f"""{personality_prompt}\n\nYou are answering using the student's provided study sources. Use the provided source as the PRIMARY source. You may use your general knowledge when the source does not contain enough information. If you use general knowledge, clearly state that the information is not directly present in the provided source. Help the student understand the topic accurately and clearly."""
+                prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "Study Source Context:\n\n{context}\n\nStudent Question:\n\n{question}")])
+                final_prompt = prompt.invoke({"context": context, "question": query})
 
-                context = "\n\n".join(
-                    doc.page_content
-                    for doc in docs
-                )
-
-                system_prompt = f"""
-{personality_prompt}
-
-You are answering using the student's provided study sources.
-
-Use the provided source as the PRIMARY source.
-
-You may use your general knowledge when the source does not contain
-enough information.
-
-If you use general knowledge, clearly state that the information is
-not directly present in the provided source.
-
-Help the student understand the topic accurately and clearly.
-"""
-
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        ("system", system_prompt),
-                        (
-                            "human",
-                            """
-Study Source Context:
-
-{context}
-
-Student Question:
-
-{question}
-"""
-                        )
-                    ]
-                )
-
-                final_prompt = prompt.invoke(
-                    {
-                        "context": context,
-                        "question": query
-                    }
-                )
-
-            response = llm.invoke(
-                final_prompt
-            )
-
+            response = llm.invoke(final_prompt)
             answer = response.content
-
             processing.empty()
-
             st.write(answer)
-
-            st.session_state.chat_history.append(
-                {
-                    "role": "assistant",
-                    "content": answer
-                }
-            )
+            st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
         except Exception:
-
             processing.empty()
-
-            st.error(
-                "Sorry, something went wrong while processing your request."
-            )
+            st.error("Sorry, something went wrong while processing your request.")
